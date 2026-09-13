@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Focused beginner Italian grammar practice for articles, gender, and plural forms." />
+    <title>Italian Practice</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <button class="brand" id="brand-home" type="button" aria-label="Return to study modes">
+          <span class="brand-mark" aria-hidden="true">IT</span>
+          <span><strong>Italian Practice</strong><small>Beginner study lab</small></span>
+        </button>
+        <button class="quiet-button hidden" id="study-home" type="button">Exit session</button>
+      </header>
+
+      <main>
+        <section id="home-view" class="view">
+          <div class="hero">
+            <div>
+              <p class="eyebrow">La pratica rende perfetti</p>
+              <h1>Build your Italian instincts.</h1>
+              <p class="hero-copy">Fast, focused repetition for articles, gender, and plural forms—with your weak areas brought back at the right time.</p>
+              <div class="hero-actions">
+                <button id="view-vocabulary" class="secondary-button" type="button">View Vocabulary</button>
+                <button id="open-practice-test" class="primary-button" type="button">Practice Test</button>
+              </div>
+            </div>
+            <div class="flag-card" aria-label="Italian flag colors"><span></span><span></span><span></span></div>
+          </div>
+
+          <section class="topic-builder" aria-labelledby="topic-heading">
+            <div class="section-heading compact">
+              <div><p class="eyebrow">Step 1</p><h2 id="topic-heading">Choose what to study</h2></div>
+              <p class="section-note" id="topic-count">All topics selected</p>
+            </div>
+            <div id="topic-groups" class="topic-groups"></div>
+            <label class="number-range-control" for="number-range">
+              <span><strong>Numbers range</strong><small>Used whenever Numbers is selected</small></span>
+              <select id="number-range">
+                <option value="basic">Basic (0–99)</option>
+                <option value="hundreds">Hundreds (100–999)</option>
+                <option value="thousands">Thousands (1,000–5,999)</option>
+                <option value="mixed">All / Mixed</option>
+              </select>
+            </label>
+            <div class="preset-row" aria-label="Topic selection shortcuts">
+              <span>Quick picks</span>
+              <button type="button" class="preset-button" data-preset="articles">Articles + Gender</button>
+              <button type="button" class="preset-button" data-preset="plurals">Singular + Plural</button>
+              <button type="button" class="preset-button" data-preset="nouns">Noun Grammar</button>
+              <button type="button" class="preset-button" data-preset="verbs">Verbs</button>
+              <button type="button" class="preset-button" data-preset="everything">Everything</button>
+            </div>
+            <div class="selection-actions topic-actions"><button id="select-all" type="button" class="text-button">Select all</button><button id="clear-all" type="button" class="text-button">Clear all</button></div>
+          </section>
+
+          <section aria-labelledby="mode-heading">
+            <div class="section-heading">
+              <div><p class="eyebrow">Step 2</p><h2 id="mode-heading">Choose practice type</h2></div>
+              <p class="section-note">Topics and answer method work independently.</p>
+            </div>
+            <div class="mode-grid">
+              <button class="mode-card" type="button" data-method="mc" aria-pressed="false">
+                <span class="mode-icon coral" aria-hidden="true">A</span>
+                <span><strong>Multiple Choice</strong><small>Recognize the right form quickly</small></span>
+                <span class="arrow" aria-hidden="true">→</span>
+              </button>
+              <button class="mode-card" type="button" data-method="typed" aria-pressed="false">
+                <span class="mode-icon blue" aria-hidden="true">Aa</span>
+                <span><strong>Written / Type Answer</strong><small>Build accurate recall</small></span>
+                <span class="arrow" aria-hidden="true">→</span>
+              </button>
+              <button class="mode-card" type="button" data-method="matching" aria-pressed="false">
+                <span class="mode-icon gold" aria-hidden="true">↔</span>
+                <span><strong>Matching</strong><small>Connect five pairs at a time</small></span>
+                <span class="arrow" aria-hidden="true">→</span>
+              </button>
+              <button class="mode-card featured" type="button" data-method="mixed" aria-pressed="true">
+                <span class="mode-icon green" aria-hidden="true">∞</span>
+                <span><strong>Mixed Practice</strong><small>A balanced, varied session</small></span>
+                <span class="arrow" aria-hidden="true">→</span>
+              </button>
+            </div>
+            <div class="start-practice-row">
+              <label>Questions<select id="question-count"><option>10</option><option selected>20</option><option>30</option><option>50</option><option value="unlimited">Unlimited</option></select></label>
+              <button id="start-practice" class="primary-button start-button" type="button">Start practice <span aria-hidden="true">→</span></button>
+            </div>
+            <p id="topic-selection-message" class="builder-message hidden" role="alert"></p>
+            <div class="review-divider"><span>or focus on previous trouble spots</span></div>
+            <div class="mode-grid">
+              <button class="mode-card mistake-mode" type="button" data-mode="mistakes">
+                <span class="mode-icon red" aria-hidden="true">!</span>
+                <span><strong>Mistakes Only</strong><small id="mistake-count-label">Review missed concepts</small></span>
+                <span class="arrow" aria-hidden="true">→</span>
+              </button>
+            </div>
+            <div class="mode-tools"><span>Mistakes leave the queue after two correct reviews.</span><button id="clear-mistakes" class="text-button" type="button">Clear mistake history</button></div>
+          </section>
+
+          <section class="dashboard" aria-labelledby="session-heading">
+            <div class="section-heading compact">
+              <div><p class="eyebrow">Progress</p><h2 id="session-heading">Today’s session</h2></div>
+              <button id="clear-progress" class="text-button" type="button">Reset today</button>
+            </div>
+            <div class="stat-grid">
+              <article><span id="stat-answered">0</span><small>Questions answered</small></article>
+              <article><span id="stat-correct">0</span><small>Correct</small></article>
+              <article class="accuracy-stat"><span id="stat-accuracy">—</span><small>Accuracy</small></article>
+            </div>
+            <div class="weak-header"><h3>Weak areas</h3><span>Practice these next</span></div>
+            <div id="weak-areas" class="weak-grid"></div>
+          </section>
+
+          <details class="settings" id="settings-panel">
+            <summary><span><strong>Study settings</strong><small>Emphasis and answer strictness</small></span><span class="chevron">⌄</span></summary>
+            <div class="settings-body">
+              <div class="settings-row">
+                <label>Practice emphasis<select id="emphasis"><option value="balanced">Balanced</option><option value="articles">Extra Articles</option><option value="plurals">Extra Plurals</option><option value="gender">Extra Gender</option><option value="weak">Weak Areas</option></select></label>
+                <label>Strictness<select id="strictness"><option value="normal">Normal</option><option value="exam">Exam Mode</option></select></label>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <section id="vocabulary-view" class="view hidden">
+          <div class="vocabulary-panel">
+            <div class="vocabulary-heading">
+              <div><p class="eyebrow">Study reference</p><h1>Vocabulary</h1><p>Tap any Italian word to reveal its meaning and grammar.</p></div>
+              <button id="vocabulary-home" class="secondary-button" type="button">Back to home</button>
+            </div>
+            <div class="vocabulary-tools">
+              <label class="vocabulary-search" for="vocabulary-search"><span class="sr-only">Search vocabulary</span><input id="vocabulary-search" type="search" placeholder="Search Italian or English" autocomplete="off" /></label>
+              <label class="vocabulary-sort" for="vocabulary-sort"><span>Sort by</span><select id="vocabulary-sort"><option value="italian">Italian</option><option value="english">English</option></select></label>
+              <div class="vocabulary-actions"><button id="show-all-vocabulary" class="text-button" type="button">Show all</button><button id="hide-all-vocabulary" class="text-button" type="button">Hide all</button></div>
+            </div>
+            <p id="vocabulary-count" class="vocabulary-count" aria-live="polite"></p>
+            <div id="vocabulary-list" class="vocabulary-list"></div>
+          </div>
+        </section>
+
+        <section id="practice-test-view" class="view hidden">
+          <div class="practice-test-panel">
+            <div class="practice-test-heading">
+              <div><p class="eyebrow">Unit 1</p><h1>Practice Test</h1><p>No feedback appears until you submit the complete test.</p></div>
+              <button id="practice-test-home" class="secondary-button" type="button">Back to home</button>
+            </div>
+            <div class="practice-test-status"><strong id="practice-test-progress">Progress: 0 / 66 answered</strong><span>66 points total</span></div>
+            <nav id="practice-test-nav" class="practice-test-nav" aria-label="Practice test sections"></nav>
+            <form id="practice-test-form"></form>
+            <div class="practice-test-actions">
+              <button id="submit-practice-test" class="primary-button" type="button">Submit Practice Test</button>
+            </div>
+            <section id="practice-test-results" class="practice-test-results hidden" aria-live="polite"></section>
+          </div>
+        </section>
+
+        <section id="study-view" class="view hidden" aria-live="polite">
+          <div class="study-topline">
+            <div><span id="question-number">Question 1</span><span class="dot">•</span><span id="question-category">Definite Articles</span></div>
+            <strong id="study-score">Score: 0 / 0</strong>
+          </div>
+          <div class="progress-track"><span id="progress-bar"></span></div>
+          <div class="session-context"><span>Practicing: <strong id="session-topics">All topics</strong></span><span>Mode: <strong id="session-mode">Mixed</strong></span></div>
+
+          <article class="question-card">
+            <div id="question-content"></div>
+            <div id="answer-area"></div>
+            <div id="feedback" class="feedback hidden" role="status"></div>
+            <div class="question-actions">
+              <button id="check-answer" class="primary-button" type="button">Check answer</button>
+              <button id="next-question" class="primary-button hidden" type="button">Next question <span aria-hidden="true">→</span></button>
+            </div>
+          </article>
+          <p class="keyboard-hint" id="keyboard-hint">Press Enter to check your answer</p>
+        </section>
+
+        <section id="summary-view" class="view hidden">
+          <article class="summary-card">
+            <span class="summary-mark" aria-hidden="true">✓</span>
+            <p class="eyebrow">Session complete</p>
+            <h1>Ben fatto!</h1>
+            <p id="summary-copy">You finished your practice session.</p>
+            <div class="summary-stats">
+              <div><strong id="summary-score">0 / 0</strong><small>Correct</small></div>
+              <div><strong id="summary-accuracy">0%</strong><small>Accuracy</small></div>
+            </div>
+            <div class="summary-actions"><button id="practice-again" class="primary-button" type="button">Practice again</button><button id="summary-home" class="secondary-button" type="button">Back home</button></div>
+          </article>
+        </section>
+      </main>
+      <footer><span>Fatto con cura per Italian 101</span><span>Progress stays private in your browser</span></footer>
+    </div>
+
+    <script src="studyData.js"></script>
+    <script src="practiceTest.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
