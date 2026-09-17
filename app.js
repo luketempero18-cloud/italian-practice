@@ -2,19 +2,23 @@
   "use strict";
 
   const DATA = window.STUDY_DATA;
+  const UNIT2 = window.UNIT2_DATA;
   const TEST = window.PRACTICE_TEST;
   const STORAGE_KEY = "italianPractice.v1";
   const SETTINGS_KEY = "italianPractice.settings.v1";
+  const UNIT2_STORAGE_KEY = "italianPractice.unit2.v1";
+  const UNIT2_SETTINGS_KEY = "italianPractice.settings.unit2.v1";
+  const ACTIVE_UNIT_KEY = "italianPractice.activeUnit.v1";
   const CORE_CATEGORIES = [
     "Definite Articles", "Indefinite Articles", "Gender", "Singular → Plural",
     "Plural → Singular", "Full Transformation"
   ];
   const MIXED_NOUN_TOPIC = "Mixed Noun Grammar";
-  const MATCHING_CATEGORIES = [
+  const UNIT1_MATCHING_CATEGORIES = [
     "Singular → Plural", "Plural → Singular", "Full Transformation", "Vocabulary",
     "Subject Pronouns", "Essere", "Stare", "Greetings", "Months", "Days of the Week", "Numbers"
   ];
-  const TOPIC_GROUPS = [
+  const UNIT1_TOPIC_GROUPS = [
     {
       name: "Core noun grammar",
       topics: [
@@ -38,13 +42,17 @@
       ]
     }
   ];
-  const ALL_TOPICS = TOPIC_GROUPS.flatMap((group) => group.topics.map(([topic]) => topic));
-  const PRESETS = {
+  const UNIT1_ALL_TOPICS = UNIT1_TOPIC_GROUPS.flatMap((group) => group.topics.map(([topic]) => topic));
+  const UNIT1_PRESETS = {
     articles: ["Definite Articles", "Indefinite Articles", "Gender"],
     plurals: ["Singular → Plural", "Plural → Singular", "Full Transformation"],
     nouns: [...CORE_CATEGORIES],
     verbs: ["Essere", "Stare"],
-    everything: [...ALL_TOPICS]
+    everything: [...UNIT1_ALL_TOPICS]
+  };
+  const PRESET_LABELS = {
+    unit1: { articles: "Articles + Gender", plurals: "Singular + Plural", nouns: "Noun Grammar", verbs: "Verbs", everything: "Everything" },
+    unit2: { vocabulary: "All Vocabulary", adjectives: "Adjectives", grammar: "Grammar", everything: "Everything" }
   };
   const METHOD_LABELS = { mc: "Multiple Choice", typed: "Written", matching: "Matching", mixed: "Mixed", mistakes: "Mistakes Only" };
   const NOUN_CATEGORIES = [
@@ -82,8 +90,32 @@
     try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; }
   }
 
-  function loadProgress() {
-    const stored = loadJSON(STORAGE_KEY, emptyProgress());
+  function progressKey(unit = activeUnit) {
+    return unit === "unit2" ? UNIT2_STORAGE_KEY : STORAGE_KEY;
+  }
+
+  function settingsKey(unit = activeUnit) {
+    return unit === "unit2" ? UNIT2_SETTINGS_KEY : SETTINGS_KEY;
+  }
+
+  function topicGroups(unit = activeUnit) {
+    return unit === "unit2" ? UNIT2.topicGroups : UNIT1_TOPIC_GROUPS;
+  }
+
+  function allTopics(unit = activeUnit) {
+    return unit === "unit2" ? UNIT2.categories : UNIT1_ALL_TOPICS;
+  }
+
+  function presets(unit = activeUnit) {
+    return unit === "unit2" ? UNIT2.presets : UNIT1_PRESETS;
+  }
+
+  function currentCategories(unit = activeUnit) {
+    return unit === "unit2" ? UNIT2.categories : DATA.categories;
+  }
+
+  function loadProgress(unit = activeUnit) {
+    const stored = loadJSON(progressKey(unit), emptyProgress());
     const clean = { ...emptyProgress(), ...stored };
     clean.today = clean.date === todayKey() ? { answered: 0, correct: 0, almost: 0, ...clean.today } : { answered: 0, correct: 0, almost: 0 };
     clean.date = todayKey();
@@ -94,42 +126,59 @@
     return clean;
   }
 
-  const defaultSettings = { topics: [...DATA.categories], categories: [...DATA.categories], method: "mixed", emphasis: "balanced", count: "20", strictness: "normal", numberRange: "mixed" };
+  let activeUnit = localStorage.getItem(ACTIVE_UNIT_KEY) === "unit2" ? "unit2" : "unit1";
+
+  function defaultSettings(unit = activeUnit) {
+    const topics = unit === "unit2" ? [...UNIT2.categories] : [...DATA.categories];
+    return { topics, categories: [...topics], method: "mixed", emphasis: "balanced", count: "20", strictness: "normal", numberRange: "mixed" };
+  }
+
+  function loadSettings(unit = activeUnit) {
+    const defaults = defaultSettings(unit);
+    const stored = loadJSON(settingsKey(unit), {});
+    const loaded = { ...defaults, ...stored };
+    const savedTopics = Array.isArray(stored.topics) ? stored.topics : (Array.isArray(stored.categories) ? stored.categories : defaults.topics);
+    loaded.topics = savedTopics.filter((topic) => allTopics(unit).includes(topic));
+    loaded.categories = expandTopics(loaded.topics, unit);
+    if (!METHOD_LABELS[loaded.method] || loaded.method === "mistakes") loaded.method = "mixed";
+    if (![...Object.keys(NUMBER_RANGES), "mixed"].includes(loaded.numberRange)) loaded.numberRange = "mixed";
+    return loaded;
+  }
+
   let progress = loadProgress();
-  const storedSettings = loadJSON(SETTINGS_KEY, {});
-  let settings = { ...defaultSettings, ...storedSettings };
-  const savedTopics = Array.isArray(storedSettings.topics) ? storedSettings.topics : (Array.isArray(storedSettings.categories) ? storedSettings.categories : defaultSettings.topics);
-  settings.topics = savedTopics.filter((topic) => ALL_TOPICS.includes(topic));
-  settings.categories = expandTopics(settings.topics);
-  if (!METHOD_LABELS[settings.method] || settings.method === "mistakes") settings.method = "mixed";
-  if (![...Object.keys(NUMBER_RANGES), "mixed"].includes(settings.numberRange)) settings.numberRange = "mixed";
+  let settings = loadSettings();
   let session = null;
   let practiceTestSession = null;
+  let vocabularyFilter = "all";
 
   function saveProgress() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    localStorage.setItem(progressKey(), JSON.stringify(progress));
   }
 
   function saveSettings() {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    localStorage.setItem(settingsKey(), JSON.stringify(settings));
   }
 
-  function expandTopics(topics) {
+  function expandTopics(topics, unit = activeUnit) {
+    if (unit === "unit2") return [...new Set(topics)].filter((category) => UNIT2.categories.includes(category));
     const expanded = topics.flatMap((topic) => topic === MIXED_NOUN_TOPIC ? CORE_CATEGORIES : [topic]);
     return [...new Set(expanded)].filter((category) => DATA.categories.includes(category));
   }
 
   function initSettings() {
     const wrap = $("#topic-groups");
-    wrap.innerHTML = TOPIC_GROUPS.map((group) => `<div class="topic-group"><h3>${escapeHtml(group.name)}</h3><div class="checkbox-grid">${group.topics.map(([topic, note]) => {
+    wrap.innerHTML = topicGroups().map((group) => `<div class="topic-group"><h3>${escapeHtml(group.name)}</h3><div class="checkbox-grid">${group.topics.map(([topic, note]) => {
       const checked = settings.topics.includes(topic) ? "checked" : "";
       return `<label class="checkbox-option"><input type="checkbox" value="${escapeHtml(topic)}" ${checked}><span>${escapeHtml(topic)}${note ? `<small>${escapeHtml(note)}</small>` : ""}</span></label>`;
     }).join("")}</div></div>`).join("");
+    const labels = PRESET_LABELS[activeUnit];
+    $("#preset-row").innerHTML = `<span>Quick picks</span>${Object.keys(presets()).map((key) => `<button type="button" class="preset-button" data-preset="${key}">${escapeHtml(labels[key])}</button>`).join("")}`;
     $("#emphasis").value = settings.emphasis;
     $("#question-count").value = settings.count;
     $("#strictness").value = settings.strictness;
     $("#number-range").value = settings.numberRange;
     selectMethod(settings.method, false);
+    updateUnitInterface();
     updateTopicCount();
   }
 
@@ -168,8 +217,45 @@
 
   function updateTopicCount() {
     const count = settings.topics.length;
-    const allCategoriesSelected = DATA.categories.every((category) => settings.categories.includes(category));
+    const allCategoriesSelected = currentCategories().every((category) => settings.categories.includes(category));
     $("#topic-count").textContent = allCategoriesSelected ? "All topics selected" : count ? `${count} ${count === 1 ? "topic" : "topics"} selected` : "No topics selected";
+  }
+
+  function updateUnitInterface() {
+    const unitLabel = activeUnit === "unit2" ? "Unit 2" : "Unit 1";
+    $$('[data-unit]').forEach((button) => {
+      const selected = button.dataset.unit === activeUnit;
+      button.classList.toggle("selected", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    });
+    $("#brand-unit-label").textContent = `${unitLabel} study lab`;
+    $("#home-unit-label").textContent = unitLabel;
+    $("#hero-copy").textContent = activeUnit === "unit2"
+      ? "Focused practice for Unit 2 vocabulary, adjective agreement, piacere, avere, and course usage—with weak areas kept separate from Unit 1."
+      : "Fast, focused repetition for articles, gender, and plural forms—with your weak areas brought back at the right time.";
+    $("#weak-areas-title").textContent = `${unitLabel} Weak Areas`;
+    $("#vocabulary-unit-label").textContent = `${unitLabel} study reference`;
+    $("#number-range-control").classList.toggle("hidden", activeUnit === "unit2");
+    $("#emphasis-control").classList.toggle("hidden", activeUnit === "unit2");
+    const testButton = $("#open-practice-test");
+    testButton.disabled = activeUnit === "unit2";
+    testButton.textContent = activeUnit === "unit2" ? "Unit 2 Practice Test coming later" : "Practice Test";
+  }
+
+  function switchUnit(nextUnit) {
+    if (nextUnit === activeUnit || !["unit1", "unit2"].includes(nextUnit)) return;
+    if ((session || practiceTestSession) && !window.confirm("Changing units will end the current study session. Continue?")) return;
+    saveSettings();
+    activeUnit = nextUnit;
+    localStorage.setItem(ACTIVE_UNIT_KEY, activeUnit);
+    progress = loadProgress();
+    settings = loadSettings();
+    session = null;
+    practiceTestSession = null;
+    vocabularyFilter = "all";
+    initSettings();
+    renderHomeStats();
+    showView("home");
   }
 
   function clearBuilderMessage() {
@@ -262,6 +348,7 @@
   }
 
   function startPracticeTest(previousSignature = "") {
+    if (activeUnit !== "unit1") return;
     session = null;
     practiceTestSession = { test: TEST.generateTest(DATA, previousSignature), submitted: false };
     renderPracticeTest();
@@ -292,6 +379,7 @@
   }
 
   function vocabularyEntries() {
+    if (activeUnit === "unit2") return UNIT2.vocabulary.map((entry) => ({ ...entry, variants: [] }));
     const grouped = new Map();
     DATA.nouns.forEach((noun) => {
       const key = lexicalKey(noun.singular);
@@ -329,7 +417,13 @@
   function renderVocabulary(expanded = null) {
     const query = normalize($("#vocabulary-search").value);
     const sortBy = $("#vocabulary-sort").value;
+    const filters = $("#vocabulary-filters");
+    filters.classList.toggle("hidden", activeUnit !== "unit2");
+    if (activeUnit === "unit2") {
+      filters.innerHTML = UNIT2.vocabularyFilters.map(([value, label]) => `<button type="button" class="preset-button ${vocabularyFilter === value ? "selected" : ""}" data-vocabulary-filter="${value}">${escapeHtml(label)}</button>`).join("");
+    } else filters.innerHTML = "";
     const entries = vocabularyEntries()
+      .filter((entry) => activeUnit !== "unit2" || vocabularyFilter === "all" || entry.groups?.includes(vocabularyFilter))
       .filter((entry) => !query || normalize(entry.italian).includes(query) || normalize(entry.english).includes(query))
       .sort((a, b) => (sortBy === "english" ? a.english.localeCompare(b.english, "en") : a.italian.localeCompare(b.italian, "it-IT")));
     $("#vocabulary-count").textContent = `${entries.length} ${entries.length === 1 ? "entry" : "entries"}`;
@@ -338,7 +432,8 @@
       const key = lexicalKey(italian);
       const isOpen = expanded === true || (expanded instanceof Set && expanded.has(key));
       const unique = (field) => [...new Set(variants.map((item) => item[field]))];
-      const grammar = variants.length ? `<div class="vocabulary-grammar"><div><small>Gender</small><b>${escapeHtml(unique("gender").map(titleCase).join(" / "))}</b></div><div><small>Singular → plural</small><b>${escapeHtml(unique("singular").join(" / "))} → ${escapeHtml(unique("plural").join(" / "))}</b></div><div><small>Definite articles</small><b>${escapeHtml([...new Set(variants.map((item) => `${articlePhrase(item.definiteSingular, item.singular)} → ${articlePhrase(item.definitePlural, item.plural)}`))].join("; "))}</b></div><div><small>Indefinite article</small><b>${escapeHtml([...new Set(variants.map((item) => articlePhrase(item.indefinite, item.singular)))].join(" / "))}</b></div></div>` : "";
+      const unit2Grammar = activeUnit === "unit2" && entry.forms ? `<div class="vocabulary-grammar"><div><small>Adjective family</small><b>${escapeHtml(entry.family === "fourEnding" ? "Four-ending" : entry.family === "twoEnding" ? "Two-ending" : entry.family === "ista" ? "-ista" : "Invariant")}</b></div><div><small>Masculine</small><b>${escapeHtml(entry.forms.ms)} · ${escapeHtml(entry.forms.mp)}</b></div><div><small>Feminine</small><b>${escapeHtml(entry.forms.fs)} · ${escapeHtml(entry.forms.fp)}</b></div>${entry.opposites?.length ? `<div><small>Opposite</small><b>${escapeHtml(entry.opposites.join(" / "))}</b></div>` : ""}</div>` : "";
+      const grammar = unit2Grammar || (variants.length ? `<div class="vocabulary-grammar"><div><small>Gender</small><b>${escapeHtml(unique("gender").map(titleCase).join(" / "))}</b></div><div><small>Singular → plural</small><b>${escapeHtml(unique("singular").join(" / "))} → ${escapeHtml(unique("plural").join(" / "))}</b></div><div><small>Definite articles</small><b>${escapeHtml([...new Set(variants.map((item) => `${articlePhrase(item.definiteSingular, item.singular)} → ${articlePhrase(item.definitePlural, item.plural)}`))].join("; "))}</b></div><div><small>Indefinite article</small><b>${escapeHtml([...new Set(variants.map((item) => articlePhrase(item.indefinite, item.singular)))].join(" / "))}</b></div></div>` : "");
       return `<article class="vocabulary-row" data-vocabulary-key="${escapeHtml(key)}"><button class="vocabulary-toggle" type="button" aria-expanded="${isOpen}"><strong>${escapeHtml(italian)}</strong><span>${isOpen ? "Hide" : "Show"}</span></button><div class="vocabulary-details ${isOpen ? "" : "hidden"}"><strong>${escapeHtml(english)}</strong><div class="vocabulary-meta"><span>${escapeHtml(tag)}</span>${register ? `<span>${escapeHtml(titleCase(register))}</span>` : ""}</div>${grammar}</div></article>`;
     }).join("") || '<div class="empty-state"><h2>No words found</h2><p>Try a different Italian or English search.</p></div>';
     $$(".vocabulary-toggle").forEach((button) => button.addEventListener("click", () => {
@@ -352,17 +447,20 @@
 
   function openVocabulary() {
     session = null;
+    vocabularyFilter = "all";
+    $("#vocabulary-search").value = "";
     renderVocabulary(new Set());
     showView("vocabulary");
   }
 
   function matchingCategoryEligible(category, numberRange = settings.numberRange) {
-    return MATCHING_CATEGORIES.includes(category) && (category !== "Numbers" || numberRange === "basic");
+    const matchingCategories = activeUnit === "unit2" ? UNIT2.matchingCategories : UNIT1_MATCHING_CATEGORIES;
+    return matchingCategories.includes(category) && (category !== "Numbers" || numberRange === "basic");
   }
 
   function startSession(mode) {
     syncSettings();
-    const selectedCategories = settings.categories.length ? [...settings.categories] : (mode === "mistakes" ? [...DATA.categories] : []);
+    const selectedCategories = settings.categories.length ? [...settings.categories] : (mode === "mistakes" ? [...currentCategories()] : []);
     if (mode !== "mistakes" && !selectedCategories.length) {
       showBuilderMessage("Choose at least one topic before starting practice.");
       $("#topic-heading").scrollIntoView({ behavior: "smooth", block: "center" });
@@ -403,6 +501,7 @@
       selectedChoice: null,
       feedbackShown: false,
       recentIds: [],
+      recentSources: [],
       recentNouns: [],
       recentNumbers: [],
       numberRange: settings.numberRange,
@@ -449,7 +548,7 @@
     const stats = progress.categories[category];
     const value = accuracy(stats);
     if (settings.emphasis === "weak" && value !== null) weight *= 1 + ((100 - value) / 35);
-    if (CORE_CATEGORIES.includes(category)) weight *= 1.35;
+    if (activeUnit === "unit1" && CORE_CATEGORIES.includes(category)) weight *= 1.35;
     return weight;
   }
 
@@ -458,6 +557,7 @@
   }
 
   function mistakeIsEligible(item) {
+    if (activeUnit === "unit2") return UNIT2.isSourceEligible(item.category, item.sourceId);
     return item.category !== "Gender" || eligibleNouns("Gender").some((noun) => noun.id === item.sourceId);
   }
 
@@ -670,6 +770,7 @@
   }
 
   function makeQuestion(category, sourceId = null) {
+    if (activeUnit === "unit2") return UNIT2.makeQuestion(category, sourceId, DATA);
     let noun = NOUN_CATEGORIES.includes(category) && category !== "Definite Articles" ? pickNoun(sourceId, category) : null;
     let q;
     switch (category) {
@@ -833,8 +934,8 @@
     [question.answer, ...shuffle(question.distractors || [])].forEach((choice) => {
       if (choice !== undefined && choice !== null && !unique.some((value) => normalize(value) === normalize(choice))) unique.push(String(choice));
     });
-    const target = question.category === "Gender" || question.category === "Formal vs Informal" || question.category === "C'è / Ci sono" ? 2 : 4;
-    const fallbacks = ["il", "lo", "la", "l'", "i", "gli", "le", "un", "uno", "una", "un'"];
+    const target = question.category === "Gender" || question.category === "Formal vs Informal" || question.category === "C'è / Ci sono" || (activeUnit === "unit2" && question.category === "Piacere") ? 2 : 4;
+    const fallbacks = activeUnit === "unit2" ? [] : ["il", "lo", "la", "l'", "i", "gli", "le", "un", "uno", "una", "un'"];
     for (const fallback of fallbacks) {
       if (unique.length >= target) break;
       if (!unique.some((value) => normalize(value) === normalize(fallback))) unique.push(fallback);
@@ -873,13 +974,15 @@
       for (let attempt = 0; attempt < 12; attempt += 1) {
         category = pickCategory();
         question = makeQuestion(category, preferredSource(category));
-        if (!session.recentIds.includes(question.id) || attempt === 11) break;
+        const recentlySeen = activeUnit === "unit2" ? session.recentSources.includes(question.sourceId) : session.recentIds.includes(question.id);
+        if (session.mode === "mistakes" || !recentlySeen || attempt === 11) break;
       }
       session.categoryCounts[category] = (session.categoryCounts[category] || 0) + 1;
       question.type = type;
       if (type === "mc") question.choices = makeChoices(question);
       session.current = question;
       session.recentIds = [...session.recentIds.slice(-4), question.id];
+      session.recentSources = [...session.recentSources.slice(-9), question.sourceId];
       rememberNounQuestion(question);
       if (Number.isInteger(question.numberValue)) session.recentNumbers = [...session.recentNumbers.slice(-19), question.numberValue];
     }
@@ -1023,6 +1126,7 @@
   }
 
   function makeMatchingQuestion(category) {
+    if (activeUnit === "unit2") return UNIT2.makeMatchingQuestion(category);
     let pairs = [];
     if (["Singular → Plural", "Plural → Singular", "Full Transformation"].includes(category)) {
       pairs = shuffle(eligibleNouns(category)).slice(0, 5).map((noun) => category === "Plural → Singular"
@@ -1097,6 +1201,7 @@
   }
 
   function bindEvents() {
+    $$('[data-unit]').forEach((button) => button.addEventListener("click", () => switchUnit(button.dataset.unit)));
     $$("[data-mode]").forEach((button) => button.addEventListener("click", () => startSession(button.dataset.mode)));
     $$("[data-method]").forEach((button) => button.addEventListener("click", () => selectMethod(button.dataset.method)));
     $("#start-practice").addEventListener("click", () => startSession(settings.method));
@@ -1114,6 +1219,12 @@
     $("#vocabulary-home").addEventListener("click", goHome);
     $("#vocabulary-search").addEventListener("input", () => renderVocabulary(new Set()));
     $("#vocabulary-sort").addEventListener("change", () => renderVocabulary(new Set()));
+    $("#vocabulary-filters").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-vocabulary-filter]");
+      if (!button) return;
+      vocabularyFilter = button.dataset.vocabularyFilter;
+      renderVocabulary(new Set());
+    });
     $("#show-all-vocabulary").addEventListener("click", () => renderVocabulary(true));
     $("#hide-all-vocabulary").addEventListener("click", () => renderVocabulary(new Set()));
     $("#clear-progress").addEventListener("click", () => {
@@ -1128,10 +1239,14 @@
       saveProgress();
       renderHomeStats();
     });
-    $("#select-all").addEventListener("click", () => setTopics(ALL_TOPICS));
+    $("#select-all").addEventListener("click", () => setTopics(allTopics()));
     $("#clear-all").addEventListener("click", () => setTopics([]));
-    $$("[data-preset]").forEach((button) => button.addEventListener("click", () => setTopics(PRESETS[button.dataset.preset])));
-    $$("#topic-groups input, #emphasis, #question-count, #strictness, #number-range").forEach((control) => control.addEventListener("change", syncSettings));
+    $("#preset-row").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-preset]");
+      if (button) setTopics(presets()[button.dataset.preset]);
+    });
+    $("#topic-groups").addEventListener("change", (event) => { if (event.target.matches("input")) syncSettings(); });
+    $$("#emphasis, #question-count, #strictness, #number-range").forEach((control) => control.addEventListener("change", syncSettings));
     document.addEventListener("keydown", (event) => {
       if (!session || $("#study-view").classList.contains("hidden")) return;
       if (session.current?.type === "mc" && !session.feedbackShown && ["1", "2", "3", "4"].includes(event.key)) {

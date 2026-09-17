@@ -16,7 +16,7 @@ Then open `http://localhost:8000/` in your browser.
 
 ## Deploy with GitHub Pages
 
-For the simplest setup, make `italian-practice` its own repository. The repository root should contain `index.html`, `styles.css`, `studyData.js`, `practiceTest.js`, and `app.js`.
+For the simplest setup, make `italian-practice` its own repository. The repository root should contain `index.html`, `styles.css`, `studyData.js`, `unit2Data.js`, `practiceTest.js`, and `app.js`.
 
 1. Create a new GitHub repository, or use an existing repository dedicated to this site.
 2. Push or upload the contents of the `italian-practice` folder. Upload the files themselves—not an extra folder around them—so `index.html` is at the repository root.

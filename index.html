@@ -12,18 +12,24 @@
       <header class="site-header">
         <button class="brand" id="brand-home" type="button" aria-label="Return to study modes">
           <span class="brand-mark" aria-hidden="true">IT</span>
-          <span><strong>Italian Practice</strong><small>Beginner study lab</small></span>
+          <span><strong>Italian Practice</strong><small id="brand-unit-label">Unit 1 study lab</small></span>
         </button>
-        <button class="quiet-button hidden" id="study-home" type="button">Exit session</button>
+        <div class="header-actions">
+          <div class="unit-selector" aria-label="Choose study unit">
+            <button type="button" data-unit="unit1" aria-pressed="true">Unit 1</button>
+            <button type="button" data-unit="unit2" aria-pressed="false">Unit 2</button>
+          </div>
+          <button class="quiet-button hidden" id="study-home" type="button">Exit session</button>
+        </div>
       </header>
 
       <main>
         <section id="home-view" class="view">
           <div class="hero">
             <div>
-              <p class="eyebrow">La pratica rende perfetti</p>
+              <p class="eyebrow"><span id="home-unit-label">Unit 1</span> · La pratica rende perfetti</p>
               <h1>Build your Italian instincts.</h1>
-              <p class="hero-copy">Fast, focused repetition for articles, gender, and plural forms—with your weak areas brought back at the right time.</p>
+              <p class="hero-copy" id="hero-copy">Fast, focused repetition for articles, gender, and plural forms—with your weak areas brought back at the right time.</p>
               <div class="hero-actions">
                 <button id="view-vocabulary" class="secondary-button" type="button">View Vocabulary</button>
                 <button id="open-practice-test" class="primary-button" type="button">Practice Test</button>
@@ -38,7 +44,7 @@
               <p class="section-note" id="topic-count">All topics selected</p>
             </div>
             <div id="topic-groups" class="topic-groups"></div>
-            <label class="number-range-control" for="number-range">
+            <label class="number-range-control" id="number-range-control" for="number-range">
               <span><strong>Numbers range</strong><small>Used whenever Numbers is selected</small></span>
               <select id="number-range">
                 <option value="basic">Basic (0–99)</option>
@@ -47,14 +53,7 @@
                 <option value="mixed">All / Mixed</option>
               </select>
             </label>
-            <div class="preset-row" aria-label="Topic selection shortcuts">
-              <span>Quick picks</span>
-              <button type="button" class="preset-button" data-preset="articles">Articles + Gender</button>
-              <button type="button" class="preset-button" data-preset="plurals">Singular + Plural</button>
-              <button type="button" class="preset-button" data-preset="nouns">Noun Grammar</button>
-              <button type="button" class="preset-button" data-preset="verbs">Verbs</button>
-              <button type="button" class="preset-button" data-preset="everything">Everything</button>
-            </div>
+            <div class="preset-row" id="preset-row" aria-label="Topic selection shortcuts"></div>
             <div class="selection-actions topic-actions"><button id="select-all" type="button" class="text-button">Select all</button><button id="clear-all" type="button" class="text-button">Clear all</button></div>
           </section>
 
@@ -111,7 +110,7 @@
               <article><span id="stat-correct">0</span><small>Correct</small></article>
               <article class="accuracy-stat"><span id="stat-accuracy">—</span><small>Accuracy</small></article>
             </div>
-            <div class="weak-header"><h3>Weak areas</h3><span>Practice these next</span></div>
+            <div class="weak-header"><h3 id="weak-areas-title">Unit 1 Weak Areas</h3><span>Practice these next</span></div>
             <div id="weak-areas" class="weak-grid"></div>
           </section>
 
@@ -119,7 +118,7 @@
             <summary><span><strong>Study settings</strong><small>Emphasis and answer strictness</small></span><span class="chevron">⌄</span></summary>
             <div class="settings-body">
               <div class="settings-row">
-                <label>Practice emphasis<select id="emphasis"><option value="balanced">Balanced</option><option value="articles">Extra Articles</option><option value="plurals">Extra Plurals</option><option value="gender">Extra Gender</option><option value="weak">Weak Areas</option></select></label>
+                <label id="emphasis-control">Practice emphasis<select id="emphasis"><option value="balanced">Balanced</option><option value="articles">Extra Articles</option><option value="plurals">Extra Plurals</option><option value="gender">Extra Gender</option><option value="weak">Weak Areas</option></select></label>
                 <label>Strictness<select id="strictness"><option value="normal">Normal</option><option value="exam">Exam Mode</option></select></label>
               </div>
             </div>
@@ -129,7 +128,7 @@
         <section id="vocabulary-view" class="view hidden">
           <div class="vocabulary-panel">
             <div class="vocabulary-heading">
-              <div><p class="eyebrow">Study reference</p><h1>Vocabulary</h1><p>Tap any Italian word to reveal its meaning and grammar.</p></div>
+              <div><p class="eyebrow" id="vocabulary-unit-label">Unit 1 study reference</p><h1>Vocabulary</h1><p>Tap any Italian word to reveal its meaning and grammar.</p></div>
               <button id="vocabulary-home" class="secondary-button" type="button">Back to home</button>
             </div>
             <div class="vocabulary-tools">
@@ -137,6 +136,7 @@
               <label class="vocabulary-sort" for="vocabulary-sort"><span>Sort by</span><select id="vocabulary-sort"><option value="italian">Italian</option><option value="english">English</option></select></label>
               <div class="vocabulary-actions"><button id="show-all-vocabulary" class="text-button" type="button">Show all</button><button id="hide-all-vocabulary" class="text-button" type="button">Hide all</button></div>
             </div>
+            <div id="vocabulary-filters" class="vocabulary-filters hidden" aria-label="Filter Unit 2 vocabulary"></div>
             <p id="vocabulary-count" class="vocabulary-count" aria-live="polite"></p>
             <div id="vocabulary-list" class="vocabulary-list"></div>
           </div>
@@ -196,6 +196,7 @@
     </div>
 
     <script src="studyData.js"></script>
+    <script src="unit2Data.js"></script>
     <script src="practiceTest.js"></script>
     <script src="app.js"></script>
   </body>
