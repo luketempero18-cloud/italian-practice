@@ -52,7 +52,7 @@
   };
   const PRESET_LABELS = {
     unit1: { articles: "Articles + Gender", plurals: "Singular + Plural", nouns: "Noun Grammar", verbs: "Verbs", everything: "Everything" },
-    unit2: { vocabulary: "All Vocabulary", adjectives: "Adjectives", grammar: "Grammar", everything: "Everything" }
+    unit2: UNIT2.presetLabels
   };
   const METHOD_LABELS = { mc: "Multiple Choice", typed: "Written", matching: "Matching", mixed: "Mixed", mistakes: "Mistakes Only" };
   const NOUN_CATEGORIES = [
@@ -103,7 +103,7 @@
   }
 
   function allTopics(unit = activeUnit) {
-    return unit === "unit2" ? UNIT2.categories : UNIT1_ALL_TOPICS;
+    return unit === "unit2" ? UNIT2.topics : UNIT1_ALL_TOPICS;
   }
 
   function presets(unit = activeUnit) {
@@ -129,8 +129,8 @@
   let activeUnit = localStorage.getItem(ACTIVE_UNIT_KEY) === "unit2" ? "unit2" : "unit1";
 
   function defaultSettings(unit = activeUnit) {
-    const topics = unit === "unit2" ? [...UNIT2.categories] : [...DATA.categories];
-    return { topics, categories: [...topics], method: "mixed", emphasis: "balanced", count: "20", strictness: "normal", numberRange: "mixed" };
+    const topics = unit === "unit2" ? [...UNIT2.topics] : [...DATA.categories];
+    return { topics, categories: expandTopics(topics, unit), method: "mixed", emphasis: "balanced", count: "20", strictness: "normal", numberRange: "mixed" };
   }
 
   function loadSettings(unit = activeUnit) {
@@ -138,7 +138,7 @@
     const stored = loadJSON(settingsKey(unit), {});
     const loaded = { ...defaults, ...stored };
     const savedTopics = Array.isArray(stored.topics) ? stored.topics : (Array.isArray(stored.categories) ? stored.categories : defaults.topics);
-    loaded.topics = savedTopics.filter((topic) => allTopics(unit).includes(topic));
+    loaded.topics = unit === "unit2" ? UNIT2.migrateTopics(savedTopics) : savedTopics.filter((topic) => allTopics(unit).includes(topic));
     loaded.categories = expandTopics(loaded.topics, unit);
     if (!METHOD_LABELS[loaded.method] || loaded.method === "mistakes") loaded.method = "mixed";
     if (![...Object.keys(NUMBER_RANGES), "mixed"].includes(loaded.numberRange)) loaded.numberRange = "mixed";
@@ -149,6 +149,8 @@
   let settings = loadSettings();
   let session = null;
   let practiceTestSession = null;
+  let pictureSession = null;
+  let lastPictureIds = [];
   let vocabularyFilter = "all";
 
   function saveProgress() {
@@ -160,19 +162,19 @@
   }
 
   function expandTopics(topics, unit = activeUnit) {
-    if (unit === "unit2") return [...new Set(topics)].filter((category) => UNIT2.categories.includes(category));
+    if (unit === "unit2") return UNIT2.expandTopics(topics);
     const expanded = topics.flatMap((topic) => topic === MIXED_NOUN_TOPIC ? CORE_CATEGORIES : [topic]);
     return [...new Set(expanded)].filter((category) => DATA.categories.includes(category));
   }
 
   function initSettings() {
     const wrap = $("#topic-groups");
-    wrap.innerHTML = topicGroups().map((group) => `<div class="topic-group"><h3>${escapeHtml(group.name)}</h3><div class="checkbox-grid">${group.topics.map(([topic, note]) => {
+    wrap.innerHTML = topicGroups().map((group) => `<div class="topic-group"><h3>${escapeHtml(group.name)}</h3><div class="checkbox-grid">${group.topics.map(([topic, note, exam2]) => {
       const checked = settings.topics.includes(topic) ? "checked" : "";
-      return `<label class="checkbox-option"><input type="checkbox" value="${escapeHtml(topic)}" ${checked}><span>${escapeHtml(topic)}${note ? `<small>${escapeHtml(note)}</small>` : ""}</span></label>`;
+      return `<label class="checkbox-option"><input type="checkbox" value="${escapeHtml(topic)}" ${checked}><span>${escapeHtml(topic)}${note ? `<small>${escapeHtml(note)}</small>` : ""}${exam2 ? '<small class="exam-badge">★ Exam 2</small>' : ""}</span></label>`;
     }).join("")}</div></div>`).join("");
     const labels = PRESET_LABELS[activeUnit];
-    $("#preset-row").innerHTML = `<span>Quick picks</span>${Object.keys(presets()).map((key) => `<button type="button" class="preset-button" data-preset="${key}">${escapeHtml(labels[key])}</button>`).join("")}`;
+    $("#preset-row").innerHTML = `<span>Quick picks</span>${Object.keys(presets()).map((key) => `<button type="button" class="preset-button ${key === "exam2" ? "exam-preset" : ""}" data-preset="${key}">${escapeHtml(labels[key])}</button>`).join("")}`;
     $("#emphasis").value = settings.emphasis;
     $("#question-count").value = settings.count;
     $("#strictness").value = settings.strictness;
@@ -231,12 +233,13 @@
     $("#brand-unit-label").textContent = `${unitLabel} study lab`;
     $("#home-unit-label").textContent = unitLabel;
     $("#hero-copy").textContent = activeUnit === "unit2"
-      ? "Focused practice for Unit 2 vocabulary, adjective agreement, piacere, avere, and course usage—with weak areas kept separate from Unit 1."
+      ? "Focused Exam 2 and Unit 2 practice for course vocabulary, adjectives, avere, regular and irregular verbs, listening, and classroom usage."
       : "Fast, focused repetition for articles, gender, and plural forms—with your weak areas brought back at the right time.";
     $("#weak-areas-title").textContent = `${unitLabel} Weak Areas`;
     $("#vocabulary-unit-label").textContent = `${unitLabel} study reference`;
     $("#number-range-control").classList.toggle("hidden", activeUnit === "unit2");
     $("#emphasis-control").classList.toggle("hidden", activeUnit === "unit2");
+    $("#open-classroom-picture").classList.toggle("hidden", activeUnit !== "unit2");
     const testButton = $("#open-practice-test");
     testButton.disabled = activeUnit === "unit2";
     testButton.textContent = activeUnit === "unit2" ? "Unit 2 Practice Test coming later" : "Practice Test";
@@ -252,6 +255,7 @@
     settings = loadSettings();
     session = null;
     practiceTestSession = null;
+    pictureSession = null;
     vocabularyFilter = "all";
     initSettings();
     renderHomeStats();
@@ -299,8 +303,8 @@
   }
 
   function showView(name) {
-    ["home", "vocabulary", "practice-test", "study", "summary"].forEach((view) => $(`#${view}-view`).classList.toggle("hidden", view !== name));
-    $("#study-home").classList.toggle("hidden", name === "home" || name === "vocabulary" || name === "practice-test");
+    ["home", "vocabulary", "practice-test", "picture", "study", "summary"].forEach((view) => $(`#${view}-view`).classList.toggle("hidden", view !== name));
+    $("#study-home").classList.toggle("hidden", name === "home" || name === "vocabulary" || name === "practice-test" || name === "picture");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -432,9 +436,16 @@
       const key = lexicalKey(italian);
       const isOpen = expanded === true || (expanded instanceof Set && expanded.has(key));
       const unique = (field) => [...new Set(variants.map((item) => item[field]))];
-      const unit2Grammar = activeUnit === "unit2" && entry.forms ? `<div class="vocabulary-grammar"><div><small>Adjective family</small><b>${escapeHtml(entry.family === "fourEnding" ? "Four-ending" : entry.family === "twoEnding" ? "Two-ending" : entry.family === "ista" ? "-ista" : "Invariant")}</b></div><div><small>Masculine</small><b>${escapeHtml(entry.forms.ms)} · ${escapeHtml(entry.forms.mp)}</b></div><div><small>Feminine</small><b>${escapeHtml(entry.forms.fs)} · ${escapeHtml(entry.forms.fp)}</b></div>${entry.opposites?.length ? `<div><small>Opposite</small><b>${escapeHtml(entry.opposites.join(" / "))}</b></div>` : ""}</div>` : "";
+      let unit2Grammar = "";
+      if (activeUnit === "unit2" && entry.forms && entry.family) {
+        unit2Grammar = `<div class="vocabulary-grammar"><div><small>Adjective family</small><b>${escapeHtml(entry.family === "fourEnding" ? "Four-ending" : entry.family === "twoEnding" ? "Two-ending" : entry.family === "ista" ? "-ista" : "Invariant")}</b></div><div><small>Masculine</small><b>${escapeHtml(entry.forms.ms)} · ${escapeHtml(entry.forms.mp)}</b></div><div><small>Feminine</small><b>${escapeHtml(entry.forms.fs)} · ${escapeHtml(entry.forms.fp)}</b></div>${entry.opposites?.length ? `<div><small>Opposite</small><b>${escapeHtml(entry.opposites.join(" / "))}</b></div>` : ""}</div>`;
+      } else if (activeUnit === "unit2" && entry.forms && entry.infinitive) {
+        unit2Grammar = `<div class="vocabulary-grammar"><div><small>Singular subjects</small><b>${escapeHtml(`io ${entry.forms.io} · tu ${entry.forms.tu} · lui/lei ${entry.forms["lui/lei/Lei"]}`)}</b></div><div><small>Plural subjects</small><b>${escapeHtml(`noi ${entry.forms.noi} · voi ${entry.forms.voi} · loro ${entry.forms.loro}`)}</b></div></div>`;
+      } else if (activeUnit === "unit2" && entry.gender) {
+        unit2Grammar = `<div class="vocabulary-grammar"><div><small>Gender</small><b>${escapeHtml(titleCase(entry.gender))}</b></div><div><small>Singular → plural</small><b>${escapeHtml(`${entry.singular} → ${entry.plural}`)}</b></div><div><small>Definite articles</small><b>${escapeHtml(`${articlePhrase(entry.definiteSingular, entry.singular)} → ${articlePhrase(entry.definitePlural, entry.plural)}`)}</b></div><div><small>Indefinite article</small><b>${escapeHtml(articlePhrase(entry.indefinite, entry.singular))}</b></div></div>`;
+      }
       const grammar = unit2Grammar || (variants.length ? `<div class="vocabulary-grammar"><div><small>Gender</small><b>${escapeHtml(unique("gender").map(titleCase).join(" / "))}</b></div><div><small>Singular → plural</small><b>${escapeHtml(unique("singular").join(" / "))} → ${escapeHtml(unique("plural").join(" / "))}</b></div><div><small>Definite articles</small><b>${escapeHtml([...new Set(variants.map((item) => `${articlePhrase(item.definiteSingular, item.singular)} → ${articlePhrase(item.definitePlural, item.plural)}`))].join("; "))}</b></div><div><small>Indefinite article</small><b>${escapeHtml([...new Set(variants.map((item) => articlePhrase(item.indefinite, item.singular)))].join(" / "))}</b></div></div>` : "");
-      return `<article class="vocabulary-row" data-vocabulary-key="${escapeHtml(key)}"><button class="vocabulary-toggle" type="button" aria-expanded="${isOpen}"><strong>${escapeHtml(italian)}</strong><span>${isOpen ? "Hide" : "Show"}</span></button><div class="vocabulary-details ${isOpen ? "" : "hidden"}"><strong>${escapeHtml(english)}</strong><div class="vocabulary-meta"><span>${escapeHtml(tag)}</span>${register ? `<span>${escapeHtml(titleCase(register))}</span>` : ""}</div>${grammar}</div></article>`;
+      return `<article class="vocabulary-row" data-vocabulary-key="${escapeHtml(key)}"><button class="vocabulary-toggle" type="button" aria-expanded="${isOpen}"><strong>${escapeHtml(italian)}</strong><span>${isOpen ? "Hide" : "Show"}</span></button><div class="vocabulary-details ${isOpen ? "" : "hidden"}"><strong>${escapeHtml(english)}</strong><div class="vocabulary-meta"><span>${escapeHtml(tag)}</span>${entry.exam2 ? '<span>★ Exam 2</span>' : ""}${register ? `<span>${escapeHtml(titleCase(register))}</span>` : ""}</div>${grammar}</div></article>`;
     }).join("") || '<div class="empty-state"><h2>No words found</h2><p>Try a different Italian or English search.</p></div>';
     $$(".vocabulary-toggle").forEach((button) => button.addEventListener("click", () => {
       const details = button.nextElementSibling;
@@ -451,6 +462,99 @@
     $("#vocabulary-search").value = "";
     renderVocabulary(new Set());
     showView("vocabulary");
+  }
+
+  function choosePictureItems() {
+    let selected = [];
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      const count = 8 + Math.floor(Math.random() * 5);
+      selected = shuffle(UNIT2.pictureItems).slice(0, count);
+      const signature = selected.map((item) => item.id).sort().join("|");
+      if (signature !== [...lastPictureIds].sort().join("|")) break;
+    }
+    lastPictureIds = selected.map((item) => item.id);
+    return selected;
+  }
+
+  function startPicturePractice() {
+    if (activeUnit !== "unit2") return;
+    session = null;
+    practiceTestSession = null;
+    const items = choosePictureItems();
+    pictureSession = { items, checked: false };
+    $("#classroom-picture").src = UNIT2.pictureAsset;
+    const selectedNumbers = new Map(items.map((item, index) => [item.id, index + 1]));
+    $("#classroom-markers").innerHTML = UNIT2.pictureItems.map((item) => {
+      const number = selectedNumbers.get(item.id);
+      return `<span class="picture-marker ${number ? "" : "cover"}" style="left:${item.x}%;top:${item.y}%">${number || ""}</span>`;
+    }).join("");
+    $("#picture-answer-form").innerHTML = items.map((item, index) => `<label class="picture-answer" data-picture-row="${escapeHtml(item.id)}"><strong>${index + 1}</strong><input data-picture-answer="${escapeHtml(item.id)}" aria-label="Italian label ${index + 1}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Italian noun"><span class="picture-answer-feedback hidden"></span></label>`).join("");
+    $("#picture-score").className = "picture-score hidden";
+    $("#picture-score").textContent = "";
+    $("#check-picture-answers").classList.remove("hidden");
+    $("#new-picture-round").classList.add("hidden");
+    showView("picture");
+    $("[data-picture-answer]")?.focus();
+  }
+
+  function recordPictureResult(item, correct) {
+    progress.today.answered += 1;
+    if (correct) progress.today.correct += 1;
+    const category = "Classroom Objects";
+    const categoryStats = progress.categories[category] || { answered: 0, correct: 0 };
+    categoryStats.answered += 1;
+    if (correct) categoryStats.correct += 1;
+    progress.categories[category] = categoryStats;
+    const key = `${category}|${item.id}`;
+    const stored = progress.items[key] || { attempts: 0, correct: 0, misses: 0, streak: 0 };
+    stored.attempts += 1;
+    stored.lastSeen = Date.now();
+    if (correct) {
+      stored.correct += 1;
+      stored.streak += 1;
+      if (progress.mistakes[key]) {
+        progress.mistakes[key].streak = (progress.mistakes[key].streak || 0) + 1;
+        if (progress.mistakes[key].streak >= 2) delete progress.mistakes[key];
+      }
+    } else {
+      stored.misses += 1;
+      stored.streak = 0;
+      progress.mistakes[key] = { key, category, sourceId: item.id, label: item.singular, misses: (progress.mistakes[key]?.misses || 0) + 1, streak: 0, lastMiss: Date.now() };
+      progress.reviewQueue.push({ category, sourceId: item.id, due: progress.today.answered + 4 });
+      progress.reviewQueue = progress.reviewQueue.slice(-40);
+    }
+    progress.items[key] = stored;
+  }
+
+  function checkPictureAnswers() {
+    if (!pictureSession || pictureSession.checked) return;
+    const controls = $$('[data-picture-answer]');
+    const empty = controls.find((control) => !control.value.trim());
+    if (empty) {
+      $("#picture-score").className = "picture-score error";
+      $("#picture-score").textContent = "Complete every label before checking.";
+      empty.focus();
+      return;
+    }
+    pictureSession.checked = true;
+    let score = 0;
+    controls.forEach((control) => {
+      const item = pictureSession.items.find((entry) => entry.id === control.dataset.pictureAnswer);
+      const correct = item.accepted.some((answer) => normalize(control.value) === normalize(answer));
+      if (correct) score += 1;
+      recordPictureResult(item, correct);
+      control.disabled = true;
+      const row = control.closest(".picture-answer");
+      row.classList.add(correct ? "correct" : "incorrect");
+      const feedback = row.querySelector(".picture-answer-feedback");
+      feedback.classList.remove("hidden");
+      feedback.innerHTML = correct ? "✓ Correct" : `Your answer: <b>${escapeHtml(control.value)}</b> · Correct: <b>${escapeHtml(item.singular)}</b>`;
+    });
+    saveProgress();
+    $("#picture-score").className = "picture-score";
+    $("#picture-score").textContent = `Score: ${score} / ${pictureSession.items.length}`;
+    $("#check-picture-answers").classList.add("hidden");
+    $("#new-picture-round").classList.remove("hidden");
   }
 
   function matchingCategoryEligible(category, numberRange = settings.numberRange) {
@@ -523,6 +627,7 @@
 
   function goHome() {
     session = null;
+    pictureSession = null;
     renderHomeStats();
     showView("home");
   }
@@ -996,7 +1101,7 @@
     $("#study-score").textContent = `Score: ${session.correct} / ${session.answered}`;
     $("#progress-bar").style.width = session.limit === Infinity ? "8%" : `${Math.min(100, (session.answered / session.limit) * 100)}%`;
     const display = q.isDialogue ? escapeHtml(q.display).replace(/\n/g, "<br>") : escapeHtml(q.display);
-    $("#question-content").innerHTML = `<p class="prompt-kicker">${escapeHtml(q.kicker)}</p><h1 class="${q.isDialogue ? "dialogue-prompt" : ""}"><em>${display}</em></h1>${q.type === "matching" ? '<p class="question-subtext">Select one item from each column to make a pair.</p>' : ""}`;
+    $("#question-content").innerHTML = `<p class="prompt-kicker">${escapeHtml(q.kicker)}</p><h1 class="${q.isDialogue ? "dialogue-prompt" : ""}"><em>${display}</em></h1>${q.audio ? `<audio class="question-audio" controls preload="metadata" src="${escapeHtml(q.audio)}">Your browser does not support audio playback.</audio>` : ""}${q.type === "matching" ? '<p class="question-subtext">Select one item from each column to make a pair.</p>' : ""}`;
     const area = $("#answer-area");
     if (q.type === "typed") {
       area.innerHTML = '<label class="sr-only" for="typed-answer">Your answer</label><input id="typed-answer" class="typed-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type your answer…">';
@@ -1212,6 +1317,11 @@
     $("#summary-home").addEventListener("click", goHome);
     $("#practice-again").addEventListener("click", () => startSession(session?.mode || "mixed"));
     $("#open-practice-test").addEventListener("click", () => startPracticeTest());
+    $("#open-classroom-picture").addEventListener("click", startPicturePractice);
+    $("#picture-home").addEventListener("click", goHome);
+    $("#check-picture-answers").addEventListener("click", checkPictureAnswers);
+    $("#new-picture-round").addEventListener("click", startPicturePractice);
+    $("#picture-answer-form").addEventListener("submit", (event) => event.preventDefault());
     $("#practice-test-home").addEventListener("click", goHome);
     $("#practice-test-form").addEventListener("submit", (event) => event.preventDefault());
     $("#submit-practice-test").addEventListener("click", submitPracticeTest);
@@ -1245,7 +1355,11 @@
       const button = event.target.closest("[data-preset]");
       if (button) setTopics(presets()[button.dataset.preset]);
     });
-    $("#topic-groups").addEventListener("change", (event) => { if (event.target.matches("input")) syncSettings(); });
+    $("#topic-groups").addEventListener("change", (event) => {
+      if (!event.target.matches("input")) return;
+      $$("#topic-groups input").filter((input) => input.value === event.target.value).forEach((input) => { input.checked = event.target.checked; });
+      syncSettings();
+    });
     $$("#emphasis, #question-count, #strictness, #number-range").forEach((control) => control.addEventListener("change", syncSettings));
     document.addEventListener("keydown", (event) => {
       if (!session || $("#study-view").classList.contains("hidden")) return;

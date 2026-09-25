@@ -1,6 +1,6 @@
 # Italian Practice
 
-A static Italian study website built with HTML, CSS, and JavaScript. It does not require a backend, database, account, package manager, or build step.
+A static Italian study website built with HTML, CSS, and JavaScript. It includes separate Unit 1 and Unit 2 study data, an Exam 2 topic preset, authentic course listening practice, and a responsive classroom-labeling exercise. It does not require a backend, database, account, package manager, or build step.
 
 ## Run locally
 
@@ -16,7 +16,7 @@ Then open `http://localhost:8000/` in your browser.
 
 ## Deploy with GitHub Pages
 
-For the simplest setup, make `italian-practice` its own repository. The repository root should contain `index.html`, `styles.css`, `studyData.js`, `unit2Data.js`, `practiceTest.js`, and `app.js`.
+For the simplest setup, make `italian-practice` its own repository. The repository root should contain `index.html`, `styles.css`, `studyData.js`, `unit2Data.js`, `practiceTest.js`, `app.js`, and the `assets` folder.
 
 1. Create a new GitHub repository, or use an existing repository dedicated to this site.
 2. Push or upload the contents of the `italian-practice` folder. Upload the files themselves—not an extra folder around them—so `index.html` is at the repository root.

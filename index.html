@@ -83,6 +83,11 @@
                 <span><strong>Mixed Practice</strong><small>A balanced, varied session</small></span>
                 <span class="arrow" aria-hidden="true">→</span>
               </button>
+              <button class="mode-card picture-mode hidden" id="open-classroom-picture" type="button">
+                <span class="mode-icon blue" aria-hidden="true">#</span>
+                <span><strong>Label the Classroom</strong><small>Written picture-labeling rounds</small></span>
+                <span class="arrow" aria-hidden="true">→</span>
+              </button>
             </div>
             <div class="start-practice-row">
               <label>Questions<select id="question-count"><option>10</option><option selected>20</option><option>30</option><option>50</option><option value="unlimited">Unlimited</option></select></label>
@@ -155,6 +160,25 @@
               <button id="submit-practice-test" class="primary-button" type="button">Submit Practice Test</button>
             </div>
             <section id="practice-test-results" class="practice-test-results hidden" aria-live="polite"></section>
+          </div>
+        </section>
+
+        <section id="picture-view" class="view hidden">
+          <div class="picture-practice-panel">
+            <div class="vocabulary-heading">
+              <div><p class="eyebrow">Unit 2 · La classe</p><h1>Label the Classroom</h1><p>Type the Italian noun for each numbered marker. Articles are optional.</p></div>
+              <button id="picture-home" class="secondary-button" type="button">Back to home</button>
+            </div>
+            <div class="classroom-picture-wrap" id="classroom-picture-wrap">
+              <img id="classroom-picture" src="./assets/unit2-classroom.png" alt="Illustrated Italian classroom with desks, students, a teacher, and classroom objects" />
+              <div id="classroom-markers" aria-hidden="true"></div>
+            </div>
+            <form id="picture-answer-form" class="picture-answer-form"></form>
+            <div id="picture-score" class="picture-score hidden" aria-live="polite"></div>
+            <div class="picture-actions">
+              <button id="check-picture-answers" class="primary-button" type="button">Check Answers</button>
+              <button id="new-picture-round" class="secondary-button hidden" type="button">New Picture Round</button>
+            </div>
           </div>
         </section>
 
