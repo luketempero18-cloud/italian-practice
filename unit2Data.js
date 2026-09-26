@@ -197,9 +197,9 @@
   }
   const REGULAR_VERBS = [
     ["abitare", "to live"], ["aiutare", "to help"], ["arrivare", "to arrive"], ["ascoltare", "to listen to"],
-    ["aspettare", "to wait for"], ["cercare", "to look for"], ["cominciare", "to begin"], ["iniziare", "to begin"],
+    ["aspettare", "to wait for"], ["cercare", "to look for"], ["cominciare", "to begin / start"], ["iniziare", "to begin / start"],
     ["comprare", "to buy"], ["frequentare", "to attend / take a course"], ["giocare", "to play"],
-    ["guardare", "to watch"], ["lavorare", "to work"], ["mangiare", "to eat"], ["ordinare", "to order"],
+    ["guardare", "to watch / look at"], ["lavorare", "to work"], ["mangiare", "to eat"], ["ordinare", "to order"],
     ["pagare", "to pay"], ["parlare", "to speak / talk"], ["spiegare", "to explain"], ["studiare", "to study"],
     ["tornare", "to return / go back"], ["visitare", "to visit"]
   ].map(([infinitive, english]) => ({ id: `regular-${infinitive}`, infinitive, italian: infinitive, english, forms: regularForms(infinitive), groups: ["regular-verbs", "verb-vocabulary", "exam2"], tag: "Regular Verbs", exam2: true }));
@@ -212,8 +212,14 @@
   };
   const IRREGULAR_VOCAB = Object.entries(IRREGULAR_VERBS).map(([category, verb]) => ({
     id: `irregular-${verb.infinitive}`, italian: verb.infinitive, english: verb.english, groups: ["irregular-verbs", "verb-vocabulary", "exam2"],
-    tag: "Irregular Verbs", exam2: true, category
+    tag: "Irregular Verbs", exam2: true, category, infinitive: verb.infinitive, forms: verb.forms
   }));
+  const AVERE_FORMS = { io: "ho", tu: "hai", "lui/lei/Lei": "ha", noi: "abbiamo", voi: "avete", loro: "hanno" };
+  const AVERE_VOCAB = {
+    id: "irregular-avere", italian: "avere", infinitive: "avere", english: "to have", forms: AVERE_FORMS,
+    groups: ["avere-verb", "verb-vocabulary", "exam2"], tag: "Avere", exam2: true
+  };
+  const VERB_VOCABULARY = [...REGULAR_VERBS, ...IRREGULAR_VOCAB, AVERE_VOCAB];
 
   const VERB_EXPRESSIONS = [
     ["andare-bene", "andare bene", "to go well", "Andare"], ["andare-male", "andare male", "to go badly", "Andare"],
@@ -224,7 +230,7 @@
     ["fare-gita", "fare una gita", "to take a short trip", "Fare"], ["stare-attento", "stare attento / attenta / attenti / attente", "to pay attention / be attentive", "Stare"],
     ["stare-zitto", "stare zitto / zitta / zitti / zitte", "to be quiet / silent", "Stare"], ["stare-bene", "stare bene", "to be well", "Stare"],
     ["stare-male", "stare male", "to be unwell", "Stare"]
-  ].map(([id, italian, english, verb]) => ({ id, italian, english, verb, groups: ["verb-expressions", "verb-vocabulary", "exam2"], tag: "Verb Expressions", exam2: true }));
+  ].map(([id, italian, english, verb]) => ({ id, italian, english, verb, groups: ["verb-expressions", "exam2"], tag: "Verb Expressions", exam2: true }));
 
   const PREPOSITIONS = [["di", "of / from"], ["a", "at / in / to"], ["da", "from / by"], ["in", "at / in / to"],
     ["con", "with"], ["su", "on / about"], ["per", "for / in order to"], ["tra", "among / between / in"], ["fra", "among / between / in"]]
@@ -240,7 +246,7 @@
       .filter((candidate) => candidate.id === item.id).flatMap((candidate) => candidate.groups))] }));
 
   const VOCABULARY = [...ADJECTIVES, ...PHRASES, ...SCHOOL_SUBJECTS, ...CLASSROOM, ...AVERE_EXPRESSIONS,
-    ...REGULAR_VERBS, ...IRREGULAR_VOCAB, ...VERB_EXPRESSIONS, ...PREPOSITIONS, ...DAYS].map((item) => ({
+    ...REGULAR_VERBS, ...IRREGULAR_VOCAB, AVERE_VOCAB, ...VERB_EXPRESSIONS, ...PREPOSITIONS, ...DAYS].map((item) => ({
     ...item,
     tag: item.tag || (item.groups.includes("personality") ? "Personality" : item.groups.includes("appearance") ? "Physical Appearance" :
       item.groups.includes("colors") ? "Colors" : item.groups.includes("nationalities") ? "Nationalities" : "Adjective Agreement"),
@@ -251,10 +257,11 @@
     "Personality Adjectives", "Physical Appearance", "Colors", "Nationalities", "School Subjects", "Classroom Objects",
     "Avere Expressions", "Adjective Opposites", "Adjective Agreement", "Adjective Singular ↔ Plural",
     "Bello Before a Noun", "Buono Before a Noun", "-issimo", "Molto: Adjective vs Adverb", "Piacere", "Avere", "Avere Idioms",
+    "Verb Vocabulary", "Verb Vocabulary: Regular -ARE", "Verb Vocabulary: Irregular", "Verb Vocabulary: Avere",
     "Regular -ARE Verbs", "Andare", "Dare", "Fare", "Stare", "Irregular Verb Expressions", "Listening Comprehension",
     "Prepositions", "Days / Agenda Vocabulary", "Culture / Reading"
   ];
-  const EXAM_TOPICS = ["School Subjects", "Describing People", "Avere", "Avere Expressions", "Regular -ARE Verbs", "Andare", "Dare", "Fare", "Stare",
+  const EXAM_TOPICS = ["School Subjects", "Describing People", "Avere", "Avere Expressions", "Verb Vocabulary", "Regular -ARE Verbs", "Andare", "Dare", "Fare", "Stare",
     "Irregular Verb Expressions", "Adjective Agreement", "Adjective Singular ↔ Plural", "Bello Before a Noun", "Buono Before a Noun",
     "Molto: Adjective vs Adverb", "Listening Comprehension"];
   const TOPIC_GROUPS = [
@@ -265,7 +272,11 @@
     { name: "Vocabulary", topics: [
       ["Personality Adjectives", "Traits and descriptions", true], ["Physical Appearance", "Appearance, hair, and eyes", true],
       ["School Subjects", "Le materie scolastiche", true], ["Classroom Objects", "La classe"], ["Colors", "Color vocabulary"],
-      ["Nationalities", "Vocabulary + agreement"], ["Avere Expressions", "Common expressions", true], ["Verb Vocabulary", "Regular, irregular, and expression meanings", true]
+      ["Nationalities", "Vocabulary + agreement"], ["Avere Expressions", "Common expressions", true],
+      ["All Verb Vocabulary", "Meanings only · all 26 verbs", true],
+      ["Verb Vocabulary: Regular -ARE", "Meanings only · 21 regular verbs", true],
+      ["Verb Vocabulary: Irregular", "Meanings only · andare, dare, fare, stare", true],
+      ["Verb Vocabulary: Avere", "Meaning only · avere", true]
     ] },
     { name: "Other Unit 2", topics: [
       ["Adjective Opposites", "Supported opposite pairs"], ["Piacere", "Piace vs piacciono"], ["-issimo", "Very / extremely"],
@@ -278,7 +289,7 @@
     "Describing People": ["Personality Adjectives", "Physical Appearance"],
     "Avere Expressions": ["Avere Expressions", "Avere Idioms"],
     "All Irregular Verbs": ["Andare", "Dare", "Fare", "Stare"],
-    "Verb Vocabulary": ["Regular -ARE Verbs", "Andare", "Dare", "Fare", "Stare", "Irregular Verb Expressions"],
+    "All Verb Vocabulary": ["Verb Vocabulary"],
     "School / Class Vocabulary": ["School Subjects", "Classroom Objects"],
     "Bello & Buono": ["Bello Before a Noun", "Buono Before a Noun"]
   };
@@ -286,12 +297,14 @@
     exam2: [...EXAM_TOPICS],
     vocabulary: ["Personality Adjectives", "Physical Appearance", "School Subjects", "Classroom Objects", "Colors", "Nationalities", "Avere Expressions", "Verb Vocabulary"],
     adjectives: ["Personality Adjectives", "Physical Appearance", "Colors", "Nationalities", "Adjective Opposites", "Adjective Agreement", "Adjective Singular ↔ Plural"],
-    verbs: ["Avere", "Avere Expressions", "Regular -ARE Verbs", "Andare", "Dare", "Fare", "Stare", "Irregular Verb Expressions"],
-    everything: [...TOPICS]
+    verbs: ["Verb Vocabulary", "Avere", "Avere Expressions", "Regular -ARE Verbs", "Andare", "Dare", "Fare", "Stare", "Irregular Verb Expressions"],
+    everything: TOPICS.filter((topic) => topic !== "All Verb Vocabulary" && !topic.startsWith("Verb Vocabulary:"))
   };
+  const DEFAULT_TOPICS = [...PRESETS.everything];
   const PRESET_LABELS = { exam2: "★ EXAM 2", vocabulary: "All Vocabulary", adjectives: "Adjectives", verbs: "Verbs", everything: "Everything" };
   const MATCHING_CATEGORIES = ["Personality Adjectives", "Physical Appearance", "Colors", "Nationalities", "School Subjects", "Classroom Objects",
-    "Avere Expressions", "Adjective Opposites", "Avere", "Regular -ARE Verbs", "Andare", "Dare", "Fare", "Stare", "Irregular Verb Expressions",
+    "Avere Expressions", "Adjective Opposites", "Avere", "Verb Vocabulary", "Verb Vocabulary: Regular -ARE", "Verb Vocabulary: Irregular", "Verb Vocabulary: Avere",
+    "Regular -ARE Verbs", "Andare", "Dare", "Fare", "Stare", "Irregular Verb Expressions",
     "Prepositions", "Days / Agenda Vocabulary"];
   const CATEGORY_GROUP = {
     "Personality Adjectives": "personality", "Physical Appearance": "appearance", Colors: "colors", Nationalities: "nationalities",
@@ -310,11 +323,42 @@
     return copy;
   };
   const translations = (value) => [value, ...value.split(" / ")];
+  const verbEnglishVariants = (value) => {
+    const hasTo = value.startsWith("to ");
+    const parts = value.split(" / ").map((part) => part.trim());
+    const variants = parts.flatMap((part) => {
+      const withTo = hasTo && !part.startsWith("to ") ? `to ${part}` : part;
+      return [withTo, withTo.replace(/^to\s+/, "")];
+    });
+    return [...new Set([value, ...variants])];
+  };
   const baseQuestion = (category, sourceId, id, kicker, display, answer, explanation, distractors = []) => ({
     category, sourceId, id, kicker, display, answer, accepted: [answer], explanation, distractors
   });
   const itemForSource = (pool, sourceId, prefix = "") => pool.find((item) => item.id === sourceId || `${prefix}${item.id}` === sourceId) || random(pool);
   const vocabularyForCategory = (category) => VOCABULARY.filter((item) => item.groups.includes(CATEGORY_GROUP[category]));
+
+  function verbVocabularyPool(category) {
+    if (category === "Verb Vocabulary: Regular -ARE") return REGULAR_VERBS;
+    if (category === "Verb Vocabulary: Irregular") return IRREGULAR_VOCAB;
+    if (category === "Verb Vocabulary: Avere") return [AVERE_VOCAB];
+    return VERB_VOCABULARY;
+  }
+
+  function verbVocabularyQuestion(category, sourceId) {
+    const pool = verbVocabularyPool(category);
+    const item = pool.find((verb) => verb.id === sourceId) || random(pool);
+    const toEnglish = Math.random() < 0.5;
+    const answer = toEnglish ? item.english : item.infinitive;
+    const distractors = VERB_VOCABULARY.filter((verb) => verb.id !== item.id)
+      .map((verb) => toEnglish ? verb.english : verb.infinitive);
+    const question = baseQuestion(category, item.id, `u2-verb-vocab:${item.id}:${toEnglish ? "en" : "it"}`,
+      toEnglish ? "Translate the infinitive into English" : "Which Italian infinitive has this meaning?",
+      toEnglish ? item.infinitive : item.english, answer,
+      `${item.infinitive} means “${item.english}.” This topic practices meaning only, not conjugation.`, distractors);
+    question.accepted = toEnglish ? verbEnglishVariants(item.english) : [item.infinitive];
+    return question;
+  }
 
   function vocabularyQuestion(category, sourceId) {
     const pool = vocabularyForCategory(category);
@@ -443,7 +487,7 @@
       `${answer} is used because ${item.phrase} is ${item.plural ? "plural" : "singular"}.`, ["piace", "piacciono"]);
   }
 
-  const AVERE = { io: "ho", tu: "hai", "lui/lei/Lei": "ha", noi: "abbiamo", voi: "avete", loro: "hanno" };
+  const AVERE = AVERE_FORMS;
   const AVERE_CONTEXTS = { io: "Io ___ fame.", tu: "Tu ___ bisogno di un caffè.", "lui/lei/Lei": "Dolores ___ un'automobile rossa.",
     noi: "Noi ___ amici intelligenti.", voi: "Voi ___ uno zaino verde.", loro: "Loro ___ lezione oggi." };
   function avereQuestion(sourceId) {
@@ -572,6 +616,7 @@
   }
 
   function makeQuestion(category, sourceId, unit1Data) {
+    if (category.startsWith("Verb Vocabulary")) return verbVocabularyQuestion(category, sourceId);
     if (category === "School Subjects") return schoolQuestion(sourceId);
     if (CATEGORY_GROUP[category] && category === "Prepositions") return prepositionQuestion(sourceId);
     if (CATEGORY_GROUP[category]) return vocabularyQuestion(category, sourceId);
@@ -593,7 +638,9 @@
 
   function makeMatchingQuestion(category) {
     let pairs;
-    if (CATEGORY_GROUP[category]) {
+    if (category.startsWith("Verb Vocabulary")) {
+      pairs = shuffle(verbVocabularyPool(category)).slice(0, 5).map((verb) => ({ left: verb.infinitive, right: verb.english }));
+    } else if (CATEGORY_GROUP[category]) {
       pairs = shuffle(vocabularyForCategory(category)).slice(0, 5).map((item) => ({ left: item.singular || item.italian, right: item.english }));
     } else if (category === "Adjective Opposites") {
       pairs = shuffle(oppositePairs()).slice(0, 5).map((pair) => ({ left: pair.left.italian, right: pair.right.italian }));
@@ -634,19 +681,21 @@
   }
 
   window.UNIT2_DATA = {
-    id: "unit2", label: "Unit 2", categories: CATEGORIES, topics: TOPICS, topicGroups: TOPIC_GROUPS, examTopics: EXAM_TOPICS,
+    id: "unit2", label: "Unit 2", categories: CATEGORIES, topics: TOPICS, defaultTopics: DEFAULT_TOPICS, topicGroups: TOPIC_GROUPS, examTopics: EXAM_TOPICS,
     presets: PRESETS, presetLabels: PRESET_LABELS, matchingCategories: MATCHING_CATEGORIES, vocabulary: VOCABULARY,
     adjectives: ADJECTIVES, schoolSubjects: SCHOOL_SUBJECTS, classroom: CLASSROOM, regularVerbs: REGULAR_VERBS,
-    irregularVerbs: IRREGULAR_VERBS, verbExpressions: VERB_EXPRESSIONS, pictureItems: PICTURE_ITEMS,
+    irregularVerbs: IRREGULAR_VERBS, verbVocabulary: VERB_VOCABULARY, verbExpressions: VERB_EXPRESSIONS, pictureItems: PICTURE_ITEMS,
     pictureAsset: "./assets/unit2-classroom.png", listeningAsset: "./assets/unit2-listening-materie.mp3",
     vocabularyFilters: [
       ["all", "All"], ["exam2", "★ Exam 2"], ["personality", "Personality"], ["appearance", "Physical Appearance"],
       ["school-subjects", "School Subjects"], ["classroom", "Classroom Objects"], ["colors", "Colors"], ["nationalities", "Nationalities"],
+      ["verb-vocabulary", "★ Verb Vocabulary"],
       ["avere-expressions", "Avere Expressions"], ["regular-verbs", "Regular Verbs"], ["irregular-verbs", "Irregular Verbs"],
       ["verb-expressions", "Verb Expressions"]
     ],
     counts: { vocabulary: VOCABULARY.length, adjectives: ADJECTIVES.length, personality: PERSONALITY.length, opposites: oppositePairs().length,
-      schoolSubjects: SCHOOL_SUBJECTS.length, classroom: CLASSROOM.length, regularVerbs: REGULAR_VERBS.length, cultureFacts: CULTURE.length },
+      schoolSubjects: SCHOOL_SUBJECTS.length, classroom: CLASSROOM.length, regularVerbs: REGULAR_VERBS.length,
+      verbVocabulary: VERB_VOCABULARY.length, cultureFacts: CULTURE.length },
     expandTopics, migrateTopics, makeQuestion, makeMatchingQuestion,
     isSourceEligible(category) { return CATEGORIES.includes(category); }
   };

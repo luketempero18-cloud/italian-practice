@@ -129,7 +129,7 @@
   let activeUnit = localStorage.getItem(ACTIVE_UNIT_KEY) === "unit2" ? "unit2" : "unit1";
 
   function defaultSettings(unit = activeUnit) {
-    const topics = unit === "unit2" ? [...UNIT2.topics] : [...DATA.categories];
+    const topics = unit === "unit2" ? [...(UNIT2.defaultTopics || UNIT2.topics)] : [...DATA.categories];
     return { topics, categories: expandTopics(topics, unit), method: "mixed", emphasis: "balanced", count: "20", strictness: "normal", numberRange: "mixed" };
   }
 
@@ -1290,7 +1290,7 @@
     const feedback = $("#feedback");
     feedback.className = `feedback ${result}`;
     feedback.innerHTML = result === "correct"
-      ? "<strong>✓ Perfect round</strong><span>All five pairs matched.</span>"
+      ? `<strong>✓ Perfect round</strong><span>All ${session.matchState.pairs.length} ${session.matchState.pairs.length === 1 ? "pair" : "pairs"} matched.</span>`
       : `<strong>Round complete</strong><span>You made ${session.matchState.mismatches} incorrect ${session.matchState.mismatches === 1 ? "match" : "matches"}. ${escapeHtml(q.explanation)}</span>`;
     $("#next-question").classList.remove("hidden");
     $("#keyboard-hint").textContent = "Press Enter for the next question";
