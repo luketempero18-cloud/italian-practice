@@ -4,11 +4,13 @@
   const DATA = window.STUDY_DATA;
   const UNIT2 = window.UNIT2_DATA;
   const TEST = window.PRACTICE_TEST;
+  const UNIT2_TEST = window.UNIT2_PRACTICE_TEST;
   const STORAGE_KEY = "italianPractice.v1";
   const SETTINGS_KEY = "italianPractice.settings.v1";
   const UNIT2_STORAGE_KEY = "italianPractice.unit2.v1";
   const UNIT2_SETTINGS_KEY = "italianPractice.settings.unit2.v1";
   const ACTIVE_UNIT_KEY = "italianPractice.activeUnit.v1";
+  const UNIT2_TEST_ATTEMPTS_KEY = "italianPractice.unit2PracticeExam.v1";
   const CORE_CATEGORIES = [
     "Definite Articles", "Indefinite Articles", "Gender", "Singular → Plural",
     "Plural → Singular", "Full Transformation"
@@ -241,13 +243,14 @@
     $("#emphasis-control").classList.toggle("hidden", activeUnit === "unit2");
     $("#open-classroom-picture").classList.toggle("hidden", activeUnit !== "unit2");
     const testButton = $("#open-practice-test");
-    testButton.disabled = activeUnit === "unit2";
-    testButton.textContent = activeUnit === "unit2" ? "Unit 2 Practice Test coming later" : "Practice Test";
+    testButton.disabled = false;
+    testButton.textContent = activeUnit === "unit2" ? "★ Practice Exam 2" : "Practice Test";
   }
 
   function switchUnit(nextUnit) {
     if (nextUnit === activeUnit || !["unit1", "unit2"].includes(nextUnit)) return;
     if ((session || practiceTestSession) && !window.confirm("Changing units will end the current study session. Continue?")) return;
+    window.speechSynthesis?.cancel();
     saveSettings();
     activeUnit = nextUnit;
     localStorage.setItem(ACTIVE_UNIT_KEY, activeUnit);
@@ -312,11 +315,31 @@
     if (question.type === "select") {
       return `<select class="practice-test-answer" data-test-answer="${escapeHtml(question.id)}" aria-label="${escapeHtml(question.prompt)}"><option value="">Choose an answer</option>${question.options.map((option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`).join("")}</select>`;
     }
+    if (question.type === "radio" || question.type === "checkbox") {
+      return `<fieldset class="practice-test-options ${question.type === "checkbox" ? "multiple-answer" : ""}" data-test-answer-group="${escapeHtml(question.id)}"><legend class="sr-only">${escapeHtml(question.prompt)}</legend>${question.options.map((option) => `<label><input class="practice-test-answer" type="${question.type}" name="${escapeHtml(question.id)}" value="${escapeHtml(option)}" data-test-answer="${escapeHtml(question.id)}"><span>${escapeHtml(option)}</span></label>`).join("")}</fieldset>`;
+    }
     return `<input class="practice-test-answer" data-test-answer="${escapeHtml(question.id)}" aria-label="${escapeHtml(question.prompt)}" autocomplete="off" autocapitalize="off" spellcheck="false" />`;
+  }
+
+  function practiceTestQuestionCount() {
+    return practiceTestSession.module.allQuestions(practiceTestSession.test).length;
+  }
+
+  function renderPracticeTestSectionSupplement(section) {
+    if (section.kind === "listening") {
+      return `<div class="practice-listening" data-listening-text="${escapeHtml(section.script)}"><strong>${escapeHtml(section.listeningTitle || "Practice listening")}</strong><p>This original browser-generated recording is practice material, not professor or course audio.</p><div class="practice-listening-actions"><button class="secondary-button play-practice-listening" type="button">▶ Play practice transcript</button><button class="text-button stop-practice-listening" type="button">Stop</button><button class="text-button reveal-practice-transcript" type="button">Reveal transcript</button></div><div class="practice-transcript hidden"><p>${escapeHtml(section.script)}</p></div></div>`;
+    }
+    if (section.passage) return `<div class="reading-passage">${section.passageTitle ? `<strong>${escapeHtml(section.passageTitle)}</strong>\n\n` : ""}${escapeHtml(section.passage)}</div>`;
+    return "";
   }
 
   function renderPracticeTest() {
     const test = practiceTestSession.test;
+    const questionCount = practiceTestQuestionCount();
+    $("#practice-test-unit-label").textContent = test.unit === "unit2" ? "Unit 2 · Exam simulation" : "Unit 1";
+    $("#practice-test-title").textContent = test.title;
+    $("#practice-test-total").textContent = `${test.totalPoints || questionCount} points total`;
+    $("#submit-practice-test").textContent = test.unit === "unit2" ? "Submit Practice Exam" : "Submit Practice Test";
     $("#practice-test-nav").innerHTML = test.sections.map((section) => `<button type="button" data-test-section="${section.id}">${escapeHtml(section.title.replace(" with Definite Articles", ""))}</button>`).join("");
     $("#practice-test-form").innerHTML = test.sections.map((section) => {
       let number = 0;
@@ -332,7 +355,7 @@
         }).join("");
         return `<div class="practice-test-question practice-test-block"><p>${escapeHtml(group.prompt)}</p><div>${fields}</div></div>`;
       }).join("");
-      return `<section class="practice-test-section" id="practice-section-${section.id}"><div class="practice-test-section-heading"><div><p class="eyebrow">Section ${section.number}</p><h2>${escapeHtml(section.title)}</h2></div><strong>${section.points} points</strong></div><p class="practice-test-instructions">${escapeHtml(section.instructions)}</p>${section.passage ? `<div class="reading-passage">${escapeHtml(section.passage)}</div>` : ""}${groups}</section>`;
+      return `<section class="practice-test-section" id="practice-section-${section.id}"><div class="practice-test-section-heading"><div><p class="eyebrow">Section ${section.number}</p><h2>${escapeHtml(section.title)}</h2></div><strong>${section.points} points</strong></div><p class="practice-test-instructions">${escapeHtml(section.instructions)}</p>${renderPracticeTestSectionSupplement(section)}${groups}</section>`;
     }).join("");
     $("#practice-test-results").classList.add("hidden");
     $("#practice-test-results").innerHTML = "";
@@ -343,39 +366,97 @@
       control.addEventListener("input", updatePracticeTestProgress);
       control.addEventListener("change", updatePracticeTestProgress);
     });
+    $$(".play-practice-listening").forEach((button) => button.addEventListener("click", () => {
+      if (!("speechSynthesis" in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(button.closest(".practice-listening").dataset.listeningText);
+      utterance.lang = "it-IT";
+      utterance.rate = 0.78;
+      window.speechSynthesis.speak(utterance);
+    }));
+    $$(".stop-practice-listening").forEach((button) => button.addEventListener("click", () => window.speechSynthesis?.cancel()));
+    $$(".reveal-practice-transcript").forEach((button) => button.addEventListener("click", () => {
+      if (!window.confirm("Reveal the transcript? For the best listening practice, try answering from audio first.")) return;
+      button.closest(".practice-listening").querySelector(".practice-transcript").classList.remove("hidden");
+      button.classList.add("hidden");
+    }));
     $$('[data-test-section]').forEach((button) => button.addEventListener("click", () => $(`#practice-section-${button.dataset.testSection}`)?.scrollIntoView({ behavior: "smooth", block: "start" })));
   }
 
   function updatePracticeTestProgress() {
-    const answered = $$(".practice-test-answer").filter((control) => control.value.trim()).length;
-    $("#practice-test-progress").textContent = `Progress: ${answered} / 66 answered`;
+    const questionIds = new Set($$(".practice-test-answer").map((control) => control.dataset.testAnswer));
+    const answered = [...questionIds].filter((id) => {
+      const controls = $$(`[data-test-answer="${CSS.escape(id)}"]`);
+      return controls.some((control) => (control.type === "radio" || control.type === "checkbox") ? control.checked : control.value.trim());
+    }).length;
+    $("#practice-test-progress").textContent = `Progress: ${answered} / ${questionIds.size} answered`;
   }
 
   function startPracticeTest(previousSignature = "") {
-    if (activeUnit !== "unit1") return;
     session = null;
-    practiceTestSession = { test: TEST.generateTest(DATA, previousSignature), submitted: false };
+    const module = activeUnit === "unit2" ? UNIT2_TEST : TEST;
+    const test = activeUnit === "unit2" ? module.generateTest(UNIT2, previousSignature) : module.generateTest(DATA, previousSignature);
+    practiceTestSession = { test, module, unit: activeUnit, submitted: false };
     renderPracticeTest();
     showView("practice-test");
+  }
+
+  function collectPracticeTestAnswers() {
+    const answers = {};
+    new Set($$(".practice-test-answer").map((control) => control.dataset.testAnswer)).forEach((id) => {
+      const controls = $$(`[data-test-answer="${CSS.escape(id)}"]`);
+      if (controls[0]?.type === "checkbox") answers[id] = controls.filter((control) => control.checked).map((control) => control.value);
+      else if (controls[0]?.type === "radio") answers[id] = controls.find((control) => control.checked)?.value || "";
+      else answers[id] = controls[0]?.value || "";
+    });
+    return answers;
+  }
+
+  function practiceAnswerIsEmpty(value) {
+    return Array.isArray(value) ? value.length === 0 : !String(value).trim();
+  }
+
+  function saveUnit2PracticeAttempt(grade) {
+    const attempts = loadJSON(UNIT2_TEST_ATTEMPTS_KEY, []);
+    attempts.unshift({ createdAt: practiceTestSession.test.createdAt, submittedAt: Date.now(), signature: practiceTestSession.test.signature,
+      score: grade.score, total: grade.total, percentage: grade.percentage,
+      sections: Object.fromEntries(Object.entries(grade.sectionScores).map(([id, value]) => [id, { correct: value.correct, total: value.total }])) });
+    localStorage.setItem(UNIT2_TEST_ATTEMPTS_KEY, JSON.stringify(attempts.slice(0, 30)));
+  }
+
+  function addUnit2ExamMistakes(grade) {
+    grade.results.filter((result) => !result.correct && UNIT2.categories.includes(result.category)).forEach((result) => {
+      const key = `${result.category}:${result.id}`;
+      progress.mistakes[key] = { key, category: result.category, sourceId: result.id, label: result.label,
+        misses: (progress.mistakes[key]?.misses || 0) + 1, streak: 0, lastMiss: Date.now(), fromPracticeExam: true };
+    });
+    saveProgress();
   }
 
   function submitPracticeTest() {
     if (!practiceTestSession || practiceTestSession.submitted) return;
     const controls = $$(".practice-test-answer");
-    const unanswered = controls.filter((control) => !control.value.trim()).length;
+    const answers = collectPracticeTestAnswers();
+    const unanswered = Object.values(answers).filter(practiceAnswerIsEmpty).length;
     if (unanswered && !window.confirm(`You still have ${unanswered} unanswered ${unanswered === 1 ? "question" : "questions"}. Submit anyway?`)) return;
-    const answers = Object.fromEntries(controls.map((control) => [control.dataset.testAnswer, control.value]));
-    const grade = TEST.gradeTest(practiceTestSession.test, answers);
+    const grade = practiceTestSession.module.gradeTest(practiceTestSession.test, answers);
     practiceTestSession.submitted = true;
     practiceTestSession.grade = grade;
     controls.forEach((control) => { control.disabled = true; });
     $("#submit-practice-test").disabled = true;
     $("#submit-practice-test").classList.add("hidden");
-    const sectionScores = Object.entries(grade.sectionScores).map(([id, score]) => `<div><span>${escapeHtml(score.title)}</span><strong>${score.correct} / ${score.total}</strong></div>`).join("");
+    const sectionScores = Object.entries(grade.sectionScores).map(([id, score]) => `<div><span>${escapeHtml(score.title)}</span><strong>${score.earned === undefined ? `${score.correct} / ${score.total}` : `${Number(score.earned.toFixed(1))} / ${score.points}`}</strong></div>`).join("");
     const missed = grade.results.filter((result) => !result.correct);
     const missedHtml = missed.length ? missed.map((result) => `<article><strong>${escapeHtml(result.sectionTitle)}</strong><p>${escapeHtml(result.label)}</p><span>Your answer: ${escapeHtml(result.studentAnswer || "Unanswered")}</span><span>Correct answer: ${escapeHtml(result.answer)}</span><small>${escapeHtml(result.explanation)}</small></article>`).join("") : '<p class="perfect-test">Perfect score—every answer is correct.</p>';
+    const reviewTopics = grade.reviewTopics?.length ? `<div class="practice-test-topics"><h2>Topics to review</h2><div>${grade.reviewTopics.map((topic) => `<span>${escapeHtml(topic.title)} · ${Math.round(topic.percentage)}%</span>`).join("")}</div></div>` : "";
     const results = $("#practice-test-results");
-    results.innerHTML = `<div class="practice-test-complete"><span class="summary-mark" aria-hidden="true">✓</span><p class="eyebrow">Practice Test Complete</p><h2>Score: ${grade.score} / ${grade.total}</h2><strong>Percentage: ${grade.percentage.toFixed(1)}%</strong></div><div class="practice-test-section-scores">${sectionScores}</div><div class="practice-test-review"><h2>${missed.length ? "Review missed questions" : "Ben fatto!"}</h2>${missedHtml}</div><div class="practice-test-result-actions"><button id="generate-new-test" class="primary-button" type="button">Generate New Test</button><button id="practice-test-results-home" class="secondary-button" type="button">Back to home</button></div>`;
+    results.innerHTML = `<div class="practice-test-complete"><span class="summary-mark" aria-hidden="true">✓</span><p class="eyebrow">${practiceTestSession.unit === "unit2" ? "Practice Exam 2 Complete" : "Practice Test Complete"}</p><h2>Score: ${grade.score} / ${grade.total}</h2><strong>Percentage: ${grade.percentage.toFixed(1)}%</strong></div><div class="practice-test-section-scores">${sectionScores}</div>${reviewTopics}<div class="practice-test-review"><h2>${missed.length ? "Review missed questions" : "Ben fatto!"}</h2>${missedHtml}</div><div class="practice-test-result-actions"><button id="generate-new-test" class="primary-button" type="button">${practiceTestSession.unit === "unit2" ? "Retake With New Questions" : "Generate New Test"}</button><button id="practice-test-results-home" class="secondary-button" type="button">Back to home</button></div>`;
+    if (practiceTestSession.unit === "unit2") {
+      saveUnit2PracticeAttempt(grade);
+      addUnit2ExamMistakes(grade);
+      $$(".practice-transcript").forEach((transcript) => transcript.classList.remove("hidden"));
+      window.speechSynthesis?.cancel();
+    }
     results.classList.remove("hidden");
     $("#generate-new-test").addEventListener("click", () => startPracticeTest(practiceTestSession.test.signature));
     $("#practice-test-results-home").addEventListener("click", goHome);
@@ -626,7 +707,9 @@
   }
 
   function goHome() {
+    window.speechSynthesis?.cancel();
     session = null;
+    practiceTestSession = null;
     pictureSession = null;
     renderHomeStats();
     showView("home");

@@ -150,10 +150,10 @@
         <section id="practice-test-view" class="view hidden">
           <div class="practice-test-panel">
             <div class="practice-test-heading">
-              <div><p class="eyebrow">Unit 1</p><h1>Practice Test</h1><p>No feedback appears until you submit the complete test.</p></div>
+              <div><p class="eyebrow" id="practice-test-unit-label">Unit 1</p><h1 id="practice-test-title">Practice Test</h1><p>No feedback appears until you submit the complete test.</p></div>
               <button id="practice-test-home" class="secondary-button" type="button">Back to home</button>
             </div>
-            <div class="practice-test-status"><strong id="practice-test-progress">Progress: 0 / 66 answered</strong><span>66 points total</span></div>
+            <div class="practice-test-status"><strong id="practice-test-progress">Progress: 0 / 66 answered</strong><span id="practice-test-total">66 points total</span></div>
             <nav id="practice-test-nav" class="practice-test-nav" aria-label="Practice test sections"></nav>
             <form id="practice-test-form"></form>
             <div class="practice-test-actions">
@@ -222,6 +222,7 @@
     <script src="studyData.js"></script>
     <script src="unit2Data.js"></script>
     <script src="practiceTest.js"></script>
+    <script src="unit2PracticeTest.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

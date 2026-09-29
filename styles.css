@@ -201,10 +201,21 @@ select, .typed-input { width: 100%; margin-top: 7px; padding: 12px 14px; border:
 .practice-test-question-copy small { margin-bottom: 3px; color: var(--green); font-size: 11px; }
 .practice-test-question-copy strong { font-weight: 600; }
 .practice-test-answer { width: 100%; margin: 0; padding: 10px 12px; border: 1px solid #cdd7d1; border-radius: 9px; color: var(--ink); background: white; }
+.practice-test-options { display: grid; gap: 8px; min-width: 190px; margin: 0; padding: 0; border: 0; }
+.practice-test-options label { display: flex; align-items: flex-start; gap: 9px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.practice-test-options label:has(input:checked) { border-color: #8caf9e; background: var(--green-soft); }
+.practice-test-options input { width: auto; margin: 2px 0 0; accent-color: var(--green); }
+.practice-test-options span { line-height: 1.3; }
 .practice-test-block > p { margin: 0; font-weight: 600; line-height: 1.7; }
 .practice-test-block > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
 .practice-test-blank { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; }
 .reading-passage { max-height: 420px; overflow-y: auto; padding: 22px; border: 1px solid var(--line); border-radius: 12px; color: #3e4b48; background: #f8f8f4; white-space: pre-line; font-family: Georgia, "Times New Roman", serif; line-height: 1.75; }
+.practice-listening { margin-bottom: 20px; padding: 22px; border: 1px solid var(--line); border-radius: 12px; background: #f8f8f4; }
+.practice-listening > strong { font-family: Georgia, "Times New Roman", serif; font-size: 20px; }
+.practice-listening > p { margin: 7px 0 16px; color: var(--muted); font-size: 13px; }
+.practice-listening-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.practice-transcript { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.practice-transcript p { margin: 0; color: #3e4b48; white-space: pre-line; font-family: Georgia, "Times New Roman", serif; line-height: 1.65; }
 .practice-test-actions { display: flex; justify-content: flex-end; margin-top: 36px; padding-top: 28px; border-top: 1px solid var(--line); }
 .practice-test-results { margin-top: 36px; padding-top: 36px; border-top: 2px solid var(--green); scroll-margin-top: 20px; }
 .practice-test-complete { text-align: center; }
@@ -212,6 +223,10 @@ select, .typed-input { width: 100%; margin-top: 7px; padding: 12px 14px; border:
 .practice-test-complete > strong { display: block; margin-top: 8px; color: var(--green); font-family: Georgia, serif; font-size: 28px; }
 .practice-test-section-scores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 28px; }
 .practice-test-section-scores div { display: flex; justify-content: space-between; gap: 16px; padding: 12px 14px; border-radius: 9px; background: #f4f6f3; font-size: 13px; }
+.practice-test-topics { margin-top: 30px; padding: 20px; border-radius: 12px; background: #fff5dc; }
+.practice-test-topics h2 { margin: 0 0 12px; font-size: 22px; }
+.practice-test-topics div { display: flex; flex-wrap: wrap; gap: 8px; }
+.practice-test-topics span { padding: 7px 10px; border-radius: 999px; color: #74571c; background: white; font-size: 12px; font-weight: 700; }
 .practice-test-review { margin-top: 34px; }
 .practice-test-review h2 { font-size: 26px; }
 .practice-test-review article { margin-top: 10px; padding: 15px 17px; border-left: 4px solid var(--red); border-radius: 10px; background: var(--red-soft); }
@@ -340,6 +355,7 @@ footer { display: flex; justify-content: space-between; gap: 20px; padding: 34px
   .practice-test-status { align-items: flex-start; flex-direction: column; }
   .practice-test-question > label { grid-template-columns: 28px 1fr; }
   .practice-test-question > label .practice-test-answer { grid-column: 2; }
+  .practice-test-question > label .practice-test-options { grid-column: 2; width: 100%; }
   .practice-test-block > div, .practice-test-section-scores { grid-template-columns: 1fr; }
   .practice-test-section-heading { align-items: flex-start; flex-direction: column; gap: 6px; }
   .practice-test-result-actions { flex-direction: column; }
