@@ -32,87 +32,111 @@
     return shuffle(chosen.slice(0, count));
   };
 
-  const four = (lemma, english, special = {}) => {
-    const stem = lemma.slice(0, -1);
-    return { lemma, english, family: "four", forms: { ms: lemma, fs: `${stem}a`, mp: `${stem}i`, fp: `${stem}e`, ...special } };
-  };
-  const two = (lemma, english) => ({ lemma, english, family: "two", forms: { ms: lemma, fs: lemma, mp: `${lemma.slice(0, -1)}i`, fp: `${lemma.slice(0, -1)}i` } });
-  const ista = (lemma, english) => ({ lemma, english, family: "ista", forms: { ms: lemma, fs: lemma, mp: `${lemma.slice(0, -1)}i`, fp: `${lemma.slice(0, -1)}e` } });
-  const ADJECTIVES = [
-    four("alto", "tall"), four("basso", "short"), four("magro", "thin"), four("grasso", "heavy"),
-    four("biondo", "blond"), four("bruno", "dark-haired"), four("simpatico", "likeable"), four("antipatico", "unlikeable"),
-    four("generoso", "generous"), four("tirchio", "stingy"), four("estroverso", "outgoing"), four("timido", "shy"),
-    four("sportivo", "athletic"), four("pigro", "lazy"), four("bravo", "capable"), four("cattivo", "bad"),
-    four("bello", "beautiful"), four("brutto", "ugly"), four("vecchio", "old", { mp: "vecchi" }), four("nuovo", "new"),
-    four("italiano", "Italian"), four("americano", "American"), four("spagnolo", "Spanish"),
-    four("tedesco", "German", { fs: "tedesca", mp: "tedeschi", fp: "tedesche" }),
-    four("messicano", "Mexican"), four("ricco", "rich", { mp: "ricchi" }),
-    two("facile", "easy"), two("difficile", "difficult"), two("interessante", "interesting"),
-    two("divertente", "fun"), two("intelligente", "intelligent"), two("gentile", "kind"),
-    two("grande", "large"), two("giovane", "young"), two("triste", "sad"), two("paziente", "patient"),
-    two("impaziente", "impatient"), two("francese", "French"), two("inglese", "English"),
-    two("cinese", "Chinese"), two("giapponese", "Japanese"),
-    ista("ottimista", "optimistic"), ista("pessimista", "pessimistic"), ista("altruista", "selfless"), ista("egoista", "selfish")
+  const endingQuestion = (id, prompt, answer, fullForm, slot, family) => Object.assign(
+    textQuestion(`adj-ending-${id}-${slot}`, prompt, answer,
+      `${fullForm} agrees with the ${slot === "ms" ? "masculine singular" : slot === "fs" ? "feminine singular" : slot === "mp" ? "masculine or mixed plural" : "feminine plural"} noun.`, "Adjective Agreement"),
+    { slot, family }
+  );
+  const ADJECTIVE_ENDING_BANK = [
+    endingQuestion("facile-compito", "Il compito di matematica è facil___.", "e", "facile", "ms", "two"),
+    endingQuestion("difficile-matematica", "La matematica non è difficil___ se studi ogni giorno.", "e", "difficile", "fs", "two"),
+    endingQuestion("interessante-amici", "Gli amici di Paolo sono molto interessant___: hanno tante storie da raccontare.", "i", "interessanti", "mp", "two"),
+    endingQuestion("interessante-lezioni", "Le lezioni di storia dell'arte sono interessant___.", "i", "interessanti", "fp", "two"),
+    endingQuestion("paziente-professoressa", "La professoressa Riva è pazient___ con gli studenti.", "e", "paziente", "fs", "two"),
+    endingQuestion("paziente-professori", "I professori sono pazient___ quando spiegano la grammatica.", "i", "pazienti", "mp", "two"),
+    endingQuestion("gentile-studentessa", "La nuova studentessa è gentil___ con tutti.", "e", "gentile", "fs", "two"),
+    endingQuestion("gentile-professoresse", "Le professoresse sono gentil___ e disponibili.", "i", "gentili", "fp", "two"),
+    endingQuestion("giovane-preside", "Il nuovo preside è giovan___.", "e", "giovane", "ms", "two"),
+    endingQuestion("giovane-studenti", "Anna e Luca sono giovan___ studenti del primo anno.", "i", "giovani", "mp", "two"),
+    endingQuestion("intelligente-amica", "La mia amica Sofia è molto intelligent___.", "e", "intelligente", "fs", "two"),
+    endingQuestion("intelligente-studentesse", "Marta e Giulia sono studentesse intelligent___.", "i", "intelligenti", "fp", "two"),
+    endingQuestion("divertente-professore", "Il professore d'italiano è divertent___ e racconta molte storie.", "e", "divertente", "ms", "two"),
+    endingQuestion("divertente-gite", "Le gite con la classe sono sempre divertent___.", "i", "divertenti", "fp", "two"),
+    endingQuestion("ottimista-amico", "L'amico di Chiara è ottimist___: pensa che l'esame andrà bene.", "a", "ottimista", "ms", "ista"),
+    endingQuestion("ottimista-amiche", "Giulia e Maria sono ottimist___ anche prima degli esami.", "e", "ottimiste", "fp", "ista"),
+    endingQuestion("pessimista-marco", "Marco è pessimist___ e pensa sempre al peggio.", "a", "pessimista", "ms", "ista"),
+    endingQuestion("pessimista-ragazzi", "Paolo e Giorgio sono pessimist___ riguardo all'esame.", "i", "pessimisti", "mp", "ista"),
+    endingQuestion("altruista-marta", "Marta è altruist___: aiuta sempre i suoi amici.", "a", "altruista", "fs", "ista"),
+    endingQuestion("altruista-amiche", "Anna e Teresa sono altruist___ e generose.", "e", "altruiste", "fp", "ista"),
+    endingQuestion("egoista-studente", "Quello studente è egoist___ e non condivide mai i suoi appunti.", "a", "egoista", "ms", "ista"),
+    endingQuestion("egoista-ragazzi", "I due ragazzi sono egoist___ e pensano solo a se stessi.", "i", "egoisti", "mp", "ista"),
+    endingQuestion("tirchio-amico", "L'amico di Giulia è tirchi___: non offre mai il caffè.", "o", "tirchio", "ms", "four"),
+    endingQuestion("generosa-maria", "Maria è generos___ con la sua famiglia.", "a", "generosa", "fs", "four"),
+    endingQuestion("sportivi-mixed", "Anna e Mario sono sportiv___ perché giocano a pallacanestro ogni giorno.", "i", "sportivi", "mp", "four"),
+    endingQuestion("sportive-ragazze", "Le ragazze sono sportiv___ e vanno spesso in palestra.", "e", "sportive", "fp", "four"),
+    endingQuestion("italiana-vespa", "La Vespa è una moto italian___ creata nel 1946.", "a", "italiana", "fs", "four"),
+    endingQuestion("italiani-studenti", "Marco e Luca sono studenti italian___.", "i", "italiani", "mp", "four"),
+    endingQuestion("bella-lezione", "La lezione di oggi è bell___ e interessante.", "a", "bella", "fs", "four"),
+    endingQuestion("belle-lezioni", "A Cornell le lezioni d'italiano sono bell___.", "e", "belle", "fp", "four"),
+    endingQuestion("simpatico-amico", "Il tuo amico Paolo è simpatic___ e fa ridere tutti.", "o", "simpatico", "ms", "four"),
+    endingQuestion("simpatica-amica", "La tua vecchia amica Maria è simpatic___.", "a", "simpatica", "fs", "four"),
+    endingQuestion("estroversi-amici", "I miei amici sono estrovers___ e parlano con tutti.", "i", "estroversi", "mp", "four"),
+    endingQuestion("timide-studentesse", "Le nuove studentesse sono timid___ e parlano poco.", "e", "timide", "fp", "four"),
+    endingQuestion("tedesca-klara", "Klara è tedesc___: è nata a Berlino.", "a", "tedesca", "fs", "four"),
+    endingQuestion("tedeschi-studenti", "Hans e Lukas sono studenti tedesch___.", "i", "tedeschi", "mp", "four"),
+    endingQuestion("ricchi-uomini", "Quegli uomini sono ricch___ ma molto generosi.", "i", "ricchi", "mp", "four"),
+    endingQuestion("vecchia-biblioteca", "La biblioteca del paese è vecchi___ ma ben fornita.", "a", "vecchia", "fs", "four"),
+    endingQuestion("nuovi-computer", "Nel laboratorio ci sono computer nuov___.", "i", "nuovi", "mp", "four"),
+    endingQuestion("nuove-sedie", "La biblioteca ha sedie nuov___ e comode.", "e", "nuove", "fp", "four")
   ];
-  const SUBJECTS = {
-    ms: ["Marco è", "Il professore è", "Lo studente è", "L'amico di Paolo è"],
-    fs: ["Giulia è", "La professoressa è", "La studentessa è", "L'amica di Marta è"],
-    mp: ["Marco e Paolo sono", "Gli studenti sono", "Anna e Luca sono", "I professori sono"],
-    fp: ["Anna e Giulia sono", "Le studentesse sono", "Le lezioni sono", "Maria e Teresa sono"]
-  };
-  const commonStem = (forms) => {
-    let stem = forms[0];
-    forms.slice(1).forEach((form) => { while (!form.startsWith(stem)) stem = stem.slice(0, -1); });
-    return stem;
-  };
-  function adjectiveEndingBank() {
-    return ADJECTIVES.flatMap((adjective) => Object.keys(SUBJECTS).map((slot) => {
-      const form = adjective.forms[slot];
-      const stem = adjective.lemma === "vecchio" ? "vecch" : commonStem(Object.values(adjective.forms));
-      return textQuestion(`adj-ending-${adjective.lemma}-${slot}`, `${random(SUBJECTS[slot])} ${stem}___.`, form.slice(stem.length),
-        `${form} agrees with the ${slot === "ms" ? "masculine singular" : slot === "fs" ? "feminine singular" : slot === "mp" ? "masculine or mixed plural" : "feminine plural"} subject.`, "Adjective Agreement");
-    }));
-  }
+  function adjectiveEndingBank() { return ADJECTIVE_ENDING_BANK; }
   function makeAdjectiveEndings() {
     const bank = adjectiveEndingBank();
     const requirements = [
-      (item) => item.id.includes("facile-") || item.id.includes("interessante-") || item.id.includes("paziente-"),
-      (item) => item.id.includes("ottimista-") || item.id.includes("pessimista-") || item.id.includes("altruista-"),
-      ...["fs", "mp", "fp", "mp", "fs", "fp"].map((slot) => (item) => item.id.endsWith(`-${slot}`))
+      (item) => /facile|interessante|paziente/.test(item.id),
+      (item) => item.family === "two" && ["mp", "fp"].includes(item.slot),
+      (item) => item.family === "ista" && item.slot === "mp",
+      (item) => item.family === "ista" && item.slot === "fp",
+      ...["fs", "mp", "fp", "mp"].map((slot) => (item) => item.family === "four" && item.slot === slot)
     ];
     return groups(selectBalanced(bank, requirements, 10));
   }
 
-  const PLURAL_SUBJECTS = {
-    ms: [["l'uomo è", "gli uomini sono"], ["il ragazzo è", "i ragazzi sono"], ["lo studente è", "gli studenti sono"], ["il professore è", "i professori sono"]],
-    fs: [["la ragazza è", "le ragazze sono"], ["l'amica è", "le amiche sono"], ["la studentessa è", "le studentesse sono"], ["la professoressa è", "le professoresse sono"]]
-  };
   const INVARIANT_COLORS = ["blu", "viola", "rosa"];
-  function pluralBank() {
-    const normal = ADJECTIVES.flatMap((adjective) => ["ms", "fs"].map((slot) => {
-      const [singular, plural] = random(PLURAL_SUBJECTS[slot]);
-      const target = slot === "ms" ? "mp" : "fp";
-      const answer = adjective.forms[target];
-      return textQuestion(`adj-plural-${adjective.lemma}-${slot}`, `${singular} ${adjective.forms[slot]} → ${plural} ___`, answer,
-        `${adjective.forms[slot]} becomes ${answer} with this plural subject.`, "Adjective Singular ↔ Plural");
-    }));
-    const colorSubjects = {
-      ms: [["lo zaino è", "gli zaini sono"], ["il quaderno è", "i quaderni sono"]],
-      fs: [["la cartellina è", "le cartelline sono"], ["la sedia è", "le sedie sono"]]
-    };
-    const colors = INVARIANT_COLORS.flatMap((color) => ["ms", "fs"].map((slot) => {
-      const [singular, plural] = random(colorSubjects[slot]);
-      return textQuestion(`adj-plural-${color}-${slot}`, `${singular} ${color} → ${plural} ___`, color,
-        `${color} is invariable, so it does not change in the plural.`, "Adjective Singular ↔ Plural");
-    }));
-    return [...normal, ...colors];
-  }
+  const pluralQuestion = (id, prompt, answer, explanation, slot) => Object.assign(
+    textQuestion(`adj-plural-${id}-${slot}`, prompt, answer, explanation, "Adjective Singular ↔ Plural"), { slot }
+  );
+  const PLURAL_BANK = [
+    pluralQuestion("anziano-professore", "il professore è anziano → i professori sono ___", "anziani", "Anziano becomes anziani with a masculine plural subject.", "ms"),
+    pluralQuestion("estroverso-studentessa", "la studentessa è estroversa → le studentesse sono ___", "estroverse", "Estroversa becomes estroverse with a feminine plural subject.", "fs"),
+    pluralQuestion("difficile-corso", "il corso non è difficile → i corsi non sono ___", "difficili", "Difficile becomes difficili in the plural.", "ms"),
+    pluralQuestion("vecchio-quaderno", "il quaderno è vecchio → i quaderni sono ___", "vecchi", "Vecchio has the masculine plural form vecchi.", "ms"),
+    pluralQuestion("giallo-cartellina", "la cartellina è gialla → le cartelline sono ___", "gialle", "Gialla becomes gialle with a feminine plural noun.", "fs"),
+    pluralQuestion("ottimista-amico", "l'amico è ottimista → gli amici sono ___", "ottimisti", "Ottimista becomes ottimisti for a masculine plural group.", "ms"),
+    pluralQuestion("ottimista-amica", "l'amica è ottimista → le amiche sono ___", "ottimiste", "Ottimista becomes ottimiste for a feminine plural group.", "fs"),
+    pluralQuestion("giapponese-keiko", "Keiko è giapponese → Keiko e Yuki sono ___", "giapponesi", "Giapponese becomes giapponesi in the plural.", "fs"),
+    pluralQuestion("biondo-marta", "Marta è bionda → Marta e Chiara sono ___", "bionde", "Bionda becomes bionde with two feminine subjects.", "fs"),
+    pluralQuestion("ricco-paolo", "Paolo è ricco → Paolo e Luca sono ___", "ricchi", "Ricco has the masculine plural form ricchi.", "ms"),
+    pluralQuestion("gentile-professoressa", "la professoressa è gentile → le professoresse sono ___", "gentili", "Gentile becomes gentili in the plural.", "fs"),
+    pluralQuestion("paziente-studente", "lo studente è paziente → gli studenti sono ___", "pazienti", "Paziente becomes pazienti in the plural.", "ms"),
+    pluralQuestion("interessante-lezione", "la lezione è interessante → le lezioni sono ___", "interessanti", "Interessante becomes interessanti in the plural.", "fs"),
+    pluralQuestion("facile-compito", "il compito è facile → i compiti sono ___", "facili", "Facile becomes facili in the plural.", "ms"),
+    pluralQuestion("sportivo-ragazzo", "il ragazzo è sportivo → i ragazzi sono ___", "sportivi", "Sportivo becomes sportivi with a masculine plural subject.", "ms"),
+    pluralQuestion("sportivo-ragazza", "la ragazza è sportiva → le ragazze sono ___", "sportive", "Sportiva becomes sportive with a feminine plural subject.", "fs"),
+    pluralQuestion("altruista-uomo", "l'uomo è altruista → gli uomini sono ___", "altruisti", "Altruista becomes altruisti for a masculine plural group.", "ms"),
+    pluralQuestion("altruista-donna", "la donna è altruista → le donne sono ___", "altruiste", "Altruista becomes altruiste for a feminine plural group.", "fs"),
+    pluralQuestion("tedesco-studente", "lo studente è tedesco → gli studenti sono ___", "tedeschi", "Tedesco has the masculine plural form tedeschi.", "ms"),
+    pluralQuestion("tedesco-studentessa", "la studentessa è tedesca → le studentesse sono ___", "tedesche", "Tedesca has the feminine plural form tedesche.", "fs"),
+    pluralQuestion("simpatico-amico", "l'amico è simpatico → gli amici sono ___", "simpatici", "Simpatico becomes simpatici in the masculine plural.", "ms"),
+    pluralQuestion("timido-amica", "l'amica è timida → le amiche sono ___", "timide", "Timida becomes timide in the feminine plural.", "fs"),
+    pluralQuestion("nuovo-computer", "il computer è nuovo → i computer sono ___", "nuovi", "Nuovo becomes nuovi in the masculine plural.", "ms"),
+    pluralQuestion("bella-piazza", "la piazza è bella → le piazze sono ___", "belle", "Bella becomes belle in the feminine plural.", "fs"),
+    pluralQuestion("italiano-professore", "il professore è italiano → i professori sono ___", "italiani", "Italiano becomes italiani in the masculine plural.", "ms"),
+    pluralQuestion("americano-studentessa", "la studentessa è americana → le studentesse sono ___", "americane", "Americana becomes americane in the feminine plural.", "fs"),
+    pluralQuestion("blu-zaino", "lo zaino è blu → gli zaini sono ___", "blu", "Blu is invariable and does not change in the plural.", "ms"),
+    pluralQuestion("viola-quaderno", "il quaderno è viola → i quaderni sono ___", "viola", "Viola is invariable and does not change in the plural.", "ms"),
+    pluralQuestion("rosa-cartellina", "la cartellina è rosa → le cartelline sono ___", "rosa", "Rosa is invariable and does not change in the plural.", "fs"),
+    pluralQuestion("blu-sedia", "la sedia è blu → le sedie sono ___", "blu", "Blu is invariable and does not change in the plural.", "fs"),
+    pluralQuestion("grande-biblioteca", "la biblioteca è grande → le biblioteche sono ___", "grandi", "Grande becomes grandi in the plural.", "fs"),
+    pluralQuestion("giovane-professore", "il professore è giovane → i professori sono ___", "giovani", "Giovane becomes giovani in the plural.", "ms")
+  ];
+  function pluralBank() { return PLURAL_BANK; }
   function makePlurals() {
     const bank = pluralBank();
     return groups(selectBalanced(bank, [
-      (item) => item.id.includes("vecchio-ms"), (item) => item.id.includes("ricco-ms"),
+      (item) => item.id.includes("vecchio-"), (item) => item.id.includes("ricco-"),
       (item) => INVARIANT_COLORS.some((color) => item.id.includes(color)),
-      (item) => item.id.includes("ottimista-ms"), (item) => item.id.endsWith("-fs")
+      (item) => item.id.includes("ottimista-") && item.slot === "ms", (item) => item.slot === "fs"
     ], 10));
   }
 
@@ -147,19 +171,77 @@
     ["culture-reply", "Alla frase «In bocca al lupo!» uno studente può rispondere: ___.", "crepi il lupo!", ["crepi il lupo!", "a domani", "non c'è male", "grazie, altrettanto"], "culture"]
   ].map(([id, prompt, answer, options, family]) => choiceQuestion(`vocab-${id}`, prompt, answer, options, `The context calls for ${answer}.`, family === "classroom" ? "Classroom Objects" : family === "subjects" ? "School Subjects" : family === "culture" ? "Culture / Reading" : family === "nationalities" ? "Nationalities" : family === "appearance" ? "Physical Appearance" : family === "personality" ? "Personality Adjectives" : "Colors"));
 
+  const CLASSROOM_PROMPTS = {
+    "class-agendina": "Segno gli appuntamenti e i compiti in un'___.",
+    "class-banco": "Lo studente mette il quaderno sul ___ davanti alla sua sedia.",
+    "class-cancellino": "La professoressa cancella la lavagna con il ___.",
+    "class-cestino": "Dopo aver sbagliato, butto il foglio nel ___.",
+    "class-gomma": "Cancello una parola scritta a matita con la ___.",
+    "class-lavagna": "La professoressa scrive la coniugazione sulla ___.",
+    "class-libro": "Per leggere il capitolo quattro, apro il ___.",
+    "class-luce": "L'aula è buia; per vedere meglio accendiamo la ___.",
+    "class-matita": "Disegno una carta geografica con la ___.",
+    "class-orologio": "Guardo l'___ per sapere quando finisce la lezione.",
+    "class-pennarello": "Il professore scrive sulla lavagna con il ___.",
+    "class-portatile": "Porto il ___ nello zaino per prendere appunti digitali.",
+    "class-proiettore": "Il professore usa il ___ per mostrare le slide alla classe.",
+    "class-quaderno": "Scrivo gli appunti della lezione nel ___.",
+    "class-schermo": "Le immagini del computer appaiono sullo ___.",
+    "class-zaino": "Porto a scuola i libri e il portatile nello ___.",
+    "class-carta-geografica": "Per trovare Roma e Napoli guardiamo la ___.",
+    "class-cattedra": "La professoressa lascia il registro sulla ___.",
+    "class-computer": "Nel laboratorio scrivo un documento al ___.",
+    "class-finestra": "Fa caldo in aula, quindi apro la ___.",
+    "class-porta": "Quando entro in classe, chiudo la ___ dietro di me.",
+    "class-sedia": "Durante la lezione sono seduto sulla ___.",
+    "class-televisore": "La classe guarda il telegiornale sul ___.",
+    "class-penna": "Scrivo la risposta sul foglio con la ___.",
+    "class-cartellina": "Conservo i fogli e gli appunti nella ___.",
+    "class-professoressa": "La ___ insegna italiano ed è una donna.",
+    "class-professore": "Il ___ insegna chimica ed è un uomo.",
+    "class-studentessa": "Giulia frequenta il corso: è una ___.",
+    "class-studente": "Marco frequenta il corso: è uno ___."
+  };
+  const SUBJECT_PROMPTS = {
+    "subject-biologia": "Per studiare le cellule e gli organismi frequento ___.",
+    "subject-chimica": "In laboratorio mescoliamo sostanze durante il corso di ___.",
+    "subject-economia": "Per capire mercati, prezzi e produzione studio ___.",
+    "subject-giornalismo": "Chi vuole scrivere notizie per un giornale può studiare ___.",
+    "subject-giurisprudenza": "Per studiare le leggi e la Costituzione frequento ___.",
+    "subject-informatica": "Per imparare a programmare e conoscere i computer studio ___.",
+    "subject-ingegneria": "Per progettare ponti e macchine si studia ___.",
+    "subject-letteratura": "Nel corso di ___ leggiamo romanzi e poesie.",
+    "subject-lingue-straniere": "Italiano, francese e tedesco sono ___.",
+    "subject-matematica": "Algebra e geometria fanno parte della ___.",
+    "subject-psicologia": "Per studiare la mente e il comportamento umano frequento ___.",
+    "subject-scienze": "Biologia, chimica e fisica sono ___.",
+    "subject-scienze-politiche": "Per studiare governi, elezioni e istituzioni frequento ___.",
+    "subject-storia": "Nel corso di ___ studiamo il passato e gli eventi importanti.",
+    "subject-storia-arte": "Michelangelo, Caravaggio e la Pop Art si studiano in ___.",
+    "subject-filosofia": "Nel corso di ___ leggiamo Platone e discutiamo grandi idee.",
+    "subject-architettura": "Per progettare edifici e spazi si studia ___.",
+    "subject-finanza": "Per studiare investimenti, banche e denaro frequento ___."
+  };
+  const SUBJECT_ANSWER_OVERRIDES = {
+    "subject-lingue-straniere": "lingue straniere",
+    "subject-scienze": "scienze",
+    "subject-scienze-politiche": "scienze politiche"
+  };
+  function contextualVocabularyQuestions(entries, prompts, category, answerOverrides = {}) {
+    return entries.map((entry) => {
+      const answer = answerOverrides[entry.id] || entry.singular;
+      const distractors = sample(entries.filter((other) => other.id !== entry.id), 3)
+        .map((other) => answerOverrides[other.id] || other.singular);
+      return choiceQuestion(`vocab-context-${entry.id}`, prompts[entry.id], answer, [answer, ...distractors],
+        `The sentence context calls for ${answer}.`, category);
+    });
+  }
   function vocabularyBank(unit2) {
-    const generated = [];
-    const sets = [
-      ["classroom", unit2.classroom, "In classe, quale parola italiana indica “{english}”?"],
-      ["subjects", unit2.schoolSubjects, "All'università, quale materia significa “{english}”?" ]
+    return [
+      ...VOCAB_CONTEXTS,
+      ...contextualVocabularyQuestions(unit2.classroom, CLASSROOM_PROMPTS, "Classroom Objects"),
+      ...contextualVocabularyQuestions(unit2.schoolSubjects, SUBJECT_PROMPTS, "School Subjects", SUBJECT_ANSWER_OVERRIDES)
     ];
-    sets.forEach(([family, entries, template]) => entries.forEach((entry) => {
-      const answer = entry.singular;
-      const options = [answer, ...sample(entries.filter((other) => other.id !== entry.id), 3).map((other) => other.singular)];
-      generated.push(choiceQuestion(`vocab-generated-${entry.id}`, template.replace("{english}", entry.english), answer, options,
-        `${answer} means “${entry.english}.”`, family === "classroom" ? "Classroom Objects" : "School Subjects"));
-    }));
-    return [...VOCAB_CONTEXTS, ...generated];
   }
   function makeVocabulary(unit2) {
     const bank = vocabularyBank(unit2);
