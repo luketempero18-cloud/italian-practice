@@ -132,7 +132,7 @@
 
   function defaultSettings(unit = activeUnit) {
     const topics = unit === "unit2" ? [...(UNIT2.defaultTopics || UNIT2.topics)] : [...DATA.categories];
-    return { topics, categories: expandTopics(topics, unit), method: "mixed", emphasis: "balanced", count: "20", strictness: "normal", numberRange: "mixed" };
+    return { topics, categories: expandTopics(topics, unit), method: "mixed", emphasis: "balanced", count: "20", strictness: "normal", numberRange: "mixed", vocabularyDirection: "mixed" };
   }
 
   function loadSettings(unit = activeUnit) {
@@ -144,6 +144,7 @@
     loaded.categories = expandTopics(loaded.topics, unit);
     if (!METHOD_LABELS[loaded.method] || loaded.method === "mistakes") loaded.method = "mixed";
     if (![...Object.keys(NUMBER_RANGES), "mixed"].includes(loaded.numberRange)) loaded.numberRange = "mixed";
+    if (!["mixed", "en-it", "it-en"].includes(loaded.vocabularyDirection)) loaded.vocabularyDirection = "mixed";
     return loaded;
   }
 
@@ -181,6 +182,7 @@
     $("#question-count").value = settings.count;
     $("#strictness").value = settings.strictness;
     $("#number-range").value = settings.numberRange;
+    $("#vocabulary-direction").value = settings.vocabularyDirection;
     selectMethod(settings.method, false);
     updateUnitInterface();
     updateTopicCount();
@@ -195,7 +197,8 @@
       emphasis: $("#emphasis").value,
       count: $("#question-count").value,
       strictness: $("#strictness").value,
-      numberRange: $("#number-range").value
+      numberRange: $("#number-range").value,
+      vocabularyDirection: $("#vocabulary-direction").value
     };
     saveSettings();
     updateTopicCount();
@@ -690,6 +693,7 @@
       recentNouns: [],
       recentNumbers: [],
       numberRange: settings.numberRange,
+      vocabularyDirection: settings.vocabularyDirection,
       articleCounts: {},
       matchState: null,
       categoryCounts: {}
@@ -958,7 +962,7 @@
   }
 
   function makeQuestion(category, sourceId = null) {
-    if (activeUnit === "unit2") return UNIT2.makeQuestion(category, sourceId, DATA);
+    if (activeUnit === "unit2") return UNIT2.makeQuestion(category, sourceId, DATA, session?.vocabularyDirection || settings.vocabularyDirection);
     let noun = NOUN_CATEGORIES.includes(category) && category !== "Definite Articles" ? pickNoun(sourceId, category) : null;
     let q;
     switch (category) {
@@ -996,13 +1000,16 @@
       case "Vocabulary": { 
         const item = pickVocabularyItem(sourceId);
         const allVocabulary = vocabularyEntries();
-        const forward = Math.random() < 0.55;
+        const direction = session?.vocabularyDirection || settings.vocabularyDirection;
+        const forward = direction === "it-en" ? true : direction === "en-it" ? false : Math.random() < 0.55;
         const equivalentTranslations = allVocabulary.filter((entry) => normalize(entry.english) === normalize(item.english));
         const distractors = allVocabulary
           .filter((entry) => entry.id !== item.id && (forward || normalize(entry.english) !== normalize(item.english)))
           .map((entry) => forward ? entry.english : entry.italian);
         q = questionBase(category, item.id, `vocab:${item.id}:${forward ? "en" : "it"}`, forward ? "Translate into English" : "Translate into Italian", forward ? item.italian : item.english, forward ? item.english : item.italian, `${titleCase(item.italian)} means “${item.english}.”`, distractors);
         q.accepted = forward ? translationAnswers(q.answer) : [...new Set(equivalentTranslations.flatMap((entry) => translationAnswers(entry.italian)))];
+        q.isVocabularyTranslation = true;
+        q.translationDirection = forward ? "it-en" : "en-it";
         break;
       }
       case "Subject Pronouns": { 
@@ -1256,12 +1263,27 @@
     } else if (result === "almost") {
       feedback.innerHTML = `<strong>Almost correct.</strong><span>Your answer: ${escapeHtml(userAnswer)} · Correct answer: ${escapeHtml(q.answer)}</span><span>${escapeHtml(accentHint(userAnswer, q.answer))}</span>`;
     } else {
-      feedback.innerHTML = `<strong>✗ Incorrect</strong><span>Your answer: ${escapeHtml(userAnswer)} · Correct answer: ${escapeHtml(q.answer)}</span><span>${escapeHtml(q.explanation)}</span>`;
+      const submittedMeaning = q.type === "typed" ? vocabularyAnswerMeaning(userAnswer, q) : "";
+      feedback.innerHTML = `<strong>✗ Incorrect</strong><span>Your answer: ${escapeHtml(userAnswer)} · Correct answer: ${escapeHtml(q.answer)}</span>${submittedMeaning ? `<span>${escapeHtml(submittedMeaning)}</span>` : ""}<span>${escapeHtml(q.explanation)}</span>`;
     }
     $("#check-answer").classList.add("hidden");
     $("#next-question").classList.remove("hidden");
     $("#keyboard-hint").textContent = "Press Enter for the next question";
     $("#study-score").textContent = `Score: ${session.correct} / ${session.answered}`;
+  }
+
+  function vocabularyAnswerMeaning(userAnswer, question) {
+    if (!question.isVocabularyTranslation) return "";
+    const entered = normalize(userAnswer);
+    const entries = vocabularyEntries();
+    for (const entry of entries) {
+      const italian = entry.italian || entry.infinitive || entry.singular || "";
+      const italianForms = [italian, entry.infinitive, entry.singular, entry.plural, ...(entry.acceptedItalian || []), ...Object.values(entry.forms || {})]
+        .filter(Boolean);
+      if (italianForms.some((form) => normalize(form) === entered)) return `“${userAnswer}” means “${entry.english}.”`;
+      if (translationAnswers(entry.english || "").some((meaning) => normalize(meaning) === entered)) return `“${userAnswer}” is the English meaning of “${italian}.”`;
+    }
+    return "";
   }
 
   function accentHint(input, answer) {
@@ -1443,7 +1465,7 @@
       $$("#topic-groups input").filter((input) => input.value === event.target.value).forEach((input) => { input.checked = event.target.checked; });
       syncSettings();
     });
-    $$("#emphasis, #question-count, #strictness, #number-range").forEach((control) => control.addEventListener("change", syncSettings));
+    $$("#emphasis, #question-count, #strictness, #number-range, #vocabulary-direction").forEach((control) => control.addEventListener("change", syncSettings));
     document.addEventListener("keydown", (event) => {
       if (!session || $("#study-view").classList.contains("hidden")) return;
       if (session.current?.type === "mc" && !session.feedbackShown && ["1", "2", "3", "4"].includes(event.key)) {

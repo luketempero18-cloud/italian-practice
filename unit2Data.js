@@ -345,10 +345,16 @@
     return VERB_VOCABULARY;
   }
 
-  function verbVocabularyQuestion(category, sourceId) {
+  function directionToEnglish(direction, mixedChance = 0.5) {
+    if (direction === "it-en") return true;
+    if (direction === "en-it") return false;
+    return Math.random() < mixedChance;
+  }
+
+  function verbVocabularyQuestion(category, sourceId, direction = "mixed") {
     const pool = verbVocabularyPool(category);
     const item = pool.find((verb) => verb.id === sourceId) || random(pool);
-    const toEnglish = Math.random() < 0.5;
+    const toEnglish = directionToEnglish(direction);
     const answer = toEnglish ? item.english : item.infinitive;
     const distractors = VERB_VOCABULARY.filter((verb) => verb.id !== item.id)
       .map((verb) => toEnglish ? verb.english : verb.infinitive);
@@ -357,13 +363,15 @@
       toEnglish ? item.infinitive : item.english, answer,
       `${item.infinitive} means “${item.english}.” This topic practices meaning only, not conjugation.`, distractors);
     question.accepted = toEnglish ? verbEnglishVariants(item.english) : [item.infinitive];
+    question.isVocabularyTranslation = true;
+    question.translationDirection = toEnglish ? "it-en" : "en-it";
     return question;
   }
 
-  function vocabularyQuestion(category, sourceId) {
+  function vocabularyQuestion(category, sourceId, direction = "mixed") {
     const pool = vocabularyForCategory(category);
     const item = itemForSource(pool, sourceId);
-    const toEnglish = Math.random() < 0.5;
+    const toEnglish = directionToEnglish(direction);
     const italianAnswer = item.singular || item.italian;
     const displayItalian = item.italian;
     const question = baseQuestion(category, item.id, `u2-vocab:${item.id}:${toEnglish ? "en" : "it"}`,
@@ -372,6 +380,8 @@
       pool.filter((candidate) => candidate.id !== item.id).map((candidate) => toEnglish ? candidate.english : (candidate.singular || candidate.italian)));
     question.accepted = toEnglish ? translations(item.english) : (item.acceptedItalian || [item.italian]);
     question.nounKey = item.id;
+    question.isVocabularyTranslation = true;
+    question.translationDirection = toEnglish ? "it-en" : "en-it";
     return question;
   }
 
@@ -380,8 +390,8 @@
     ["pop-art", "La Pop-art → ______", "storia dell'arte"], ["relazioni", "Relazioni internazionali → ______", "scienze politiche"],
     ["languages", "Spanish / French / German → ______", "lingue straniere"]
   ].map(([id, prompt, answer]) => ({ id: `school-context-${id}`, prompt, answer }));
-  function schoolQuestion(sourceId) {
-    if ((sourceId?.startsWith("school-context-") || Math.random() < 0.3)) {
+  function schoolQuestion(sourceId, direction = "mixed") {
+    if (direction === "mixed" && (sourceId?.startsWith("school-context-") || Math.random() < 0.3)) {
       const item = itemForSource(SCHOOL_CONTEXTS, sourceId);
       const question = baseQuestion("School Subjects", item.id, `u2-${item.id}`, "Choose the course-supported subject", item.prompt, item.answer,
         `${item.answer} is the subject associated with this course example.`, SCHOOL_SUBJECTS.map((subject) => subject.singular).filter((value) => value !== item.answer));
@@ -389,7 +399,7 @@
       question.accepted = subject ? subject.acceptedItalian : [item.answer];
       return question;
     }
-    return vocabularyQuestion("School Subjects", sourceId);
+    return vocabularyQuestion("School Subjects", sourceId, direction);
   }
 
   function oppositePairs() {
@@ -615,11 +625,11 @@
       item.answer, "This fact comes directly from the stored Unit 2 culture material.", item.options.filter((option) => option !== item.answer));
   }
 
-  function makeQuestion(category, sourceId, unit1Data) {
-    if (category.startsWith("Verb Vocabulary")) return verbVocabularyQuestion(category, sourceId);
-    if (category === "School Subjects") return schoolQuestion(sourceId);
+  function makeQuestion(category, sourceId, unit1Data, vocabularyDirection = "mixed") {
+    if (category.startsWith("Verb Vocabulary")) return verbVocabularyQuestion(category, sourceId, vocabularyDirection);
+    if (category === "School Subjects") return schoolQuestion(sourceId, vocabularyDirection);
     if (CATEGORY_GROUP[category] && category === "Prepositions") return prepositionQuestion(sourceId);
-    if (CATEGORY_GROUP[category]) return vocabularyQuestion(category, sourceId);
+    if (CATEGORY_GROUP[category]) return vocabularyQuestion(category, sourceId, vocabularyDirection);
     if (category === "Adjective Opposites") return oppositeQuestion(sourceId);
     if (category === "Adjective Agreement") return agreementQuestion(sourceId);
     if (category === "Adjective Singular ↔ Plural") return adjectiveNumberQuestion(sourceId);
