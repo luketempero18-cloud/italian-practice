@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Focused beginner Italian grammar practice for articles, gender, and plural forms." />
     <title>Italian Practice</title>
-    <link rel="stylesheet" href="styles.css?v=20260930-2" />
+    <link rel="stylesheet" href="styles.css?v=20260930-3" />
   </head>
   <body>
     <div class="page-shell">
@@ -33,6 +33,7 @@
               <div class="hero-actions">
                 <button id="view-vocabulary" class="secondary-button" type="button">View Vocabulary</button>
                 <button id="open-practice-test" class="primary-button" type="button">Practice Test</button>
+                <button id="open-last-minute" class="primary-button last-minute-launch hidden" type="button">★ Last Minute Study</button>
               </div>
             </div>
             <div class="flag-card" aria-label="Italian flag colors"><span></span><span></span><span></span></div>
@@ -155,6 +156,65 @@
           </div>
         </section>
 
+        <section id="last-minute-view" class="view hidden">
+          <div class="last-minute-panel last-minute-intro">
+            <div class="last-minute-heading">
+              <div><p class="eyebrow">Unit 2 · Final review</p><h1>★ Last Minute Study</h1></div>
+              <button id="last-minute-home" class="secondary-button" type="button">Back to home</button>
+            </div>
+            <div class="last-minute-count"><strong>41</strong><span>starred terms only</span></div>
+            <p class="last-minute-lead">Rapid review of the terms you marked as highest priority.</p>
+            <div class="last-minute-main-actions">
+              <button id="start-last-minute-test" class="primary-button" type="button">Start Rapid Test</button>
+              <button id="review-last-minute-terms" class="secondary-button" type="button">Review Starred Terms</button>
+            </div>
+            <div id="last-minute-history" class="last-minute-history"></div>
+          </div>
+        </section>
+
+        <section id="last-minute-review-view" class="view hidden">
+          <div class="last-minute-panel">
+            <div class="last-minute-heading">
+              <div><p class="eyebrow">41 starred terms only</p><h1>Review Starred Terms</h1><p>Italian and English, grouped by your review-sheet categories.</p></div>
+              <button id="last-minute-review-back" class="secondary-button" type="button">Back</button>
+            </div>
+            <div id="last-minute-filters" class="vocabulary-filters" aria-label="Filter starred terms"></div>
+            <p id="last-minute-review-count" class="vocabulary-count" aria-live="polite"></p>
+            <div id="last-minute-review-list" class="last-minute-review-list"></div>
+          </div>
+        </section>
+
+        <section id="last-minute-test-view" class="view hidden">
+          <div class="last-minute-test-shell">
+            <div class="last-minute-test-topline">
+              <div><span id="last-minute-question-number">Question 1</span><span class="dot">•</span><span id="last-minute-category">Adjectives</span></div>
+              <strong id="last-minute-score">0 / 0 correct</strong>
+            </div>
+            <div class="progress-track"><span id="last-minute-progress"></span></div>
+            <article class="question-card last-minute-question-card">
+              <div id="last-minute-question"></div>
+              <div id="last-minute-answer"></div>
+              <div id="last-minute-feedback" class="feedback hidden" role="status"></div>
+              <div class="question-actions"><button id="check-last-minute-answer" class="primary-button" type="button">Check answer</button></div>
+            </article>
+            <div class="last-minute-test-footer"><span>Missed terms return later with a different question.</span><button id="exit-last-minute-test" class="text-button" type="button">Exit rapid test</button></div>
+          </div>
+        </section>
+
+        <section id="last-minute-results-view" class="view hidden">
+          <div class="last-minute-panel last-minute-results">
+            <p class="eyebrow">★ Last Minute Study</p>
+            <h1>Last Minute Results</h1>
+            <div class="last-minute-result-score"><strong id="last-minute-result-percent">0%</strong><span id="last-minute-result-fraction">0 / 0 correct</span></div>
+            <div id="last-minute-review-again"></div>
+            <div class="last-minute-main-actions">
+              <button id="retry-last-minute-missed" class="primary-button" type="button">Retry Missed Terms</button>
+              <button id="new-last-minute-test" class="secondary-button" type="button">New Rapid Test</button>
+              <button id="last-minute-results-home" class="text-button" type="button">Back to home</button>
+            </div>
+          </div>
+        </section>
+
         <section id="practice-test-view" class="view hidden">
           <div class="practice-test-panel">
             <div class="practice-test-heading">
@@ -227,10 +287,11 @@
       <footer><span>Fatto con cura per Italian 101</span><span>Progress stays private in your browser</span></footer>
     </div>
 
-    <script src="studyData.js?v=20260930-2"></script>
-    <script src="unit2Data.js?v=20260930-2"></script>
-    <script src="practiceTest.js?v=20260930-2"></script>
-    <script src="unit2PracticeTest.js?v=20260930-2"></script>
-    <script src="app.js?v=20260930-2"></script>
+    <script src="studyData.js?v=20260930-3"></script>
+    <script src="unit2Data.js?v=20260930-3"></script>
+    <script src="practiceTest.js?v=20260930-3"></script>
+    <script src="unit2PracticeTest.js?v=20260930-3"></script>
+    <script src="lastMinuteStudy.js?v=20260930-3"></script>
+    <script src="app.js?v=20260930-3"></script>
   </body>
 </html>

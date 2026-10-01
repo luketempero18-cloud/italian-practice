@@ -5,6 +5,7 @@
   const UNIT2 = window.UNIT2_DATA;
   const TEST = window.PRACTICE_TEST;
   const UNIT2_TEST = window.UNIT2_PRACTICE_TEST;
+  const LAST_MINUTE = window.LAST_MINUTE_STUDY;
   const STORAGE_KEY = "italianPractice.v1";
   const SETTINGS_KEY = "italianPractice.settings.v1";
   const UNIT2_STORAGE_KEY = "italianPractice.unit2.v1";
@@ -156,6 +157,10 @@
   let session = null;
   let practiceTestSession = null;
   let pictureSession = null;
+  let lastMinuteSession = null;
+  let lastMinuteTimer = null;
+  let lastMinuteFilter = "all";
+  let lastMinuteLastMissed = [];
   let lastPictureIds = [];
   let vocabularyFilter = "all";
 
@@ -249,6 +254,7 @@
     $("#number-range-control").classList.toggle("hidden", activeUnit === "unit2");
     $("#emphasis-control").classList.toggle("hidden", activeUnit === "unit2");
     $("#open-classroom-picture").classList.toggle("hidden", activeUnit !== "unit2");
+    $("#open-last-minute").classList.toggle("hidden", activeUnit !== "unit2");
     const testButton = $("#open-practice-test");
     testButton.disabled = false;
     testButton.textContent = activeUnit === "unit2" ? "★ Practice Exam 2" : "Practice Test";
@@ -256,7 +262,8 @@
 
   function switchUnit(nextUnit) {
     if (nextUnit === activeUnit || !["unit1", "unit2"].includes(nextUnit)) return;
-    if ((session || practiceTestSession) && !window.confirm("Changing units will end the current study session. Continue?")) return;
+    if ((session || practiceTestSession || lastMinuteSession) && !window.confirm("Changing units will end the current study session. Continue?")) return;
+    clearTimeout(lastMinuteTimer);
     window.speechSynthesis?.cancel();
     saveSettings();
     activeUnit = nextUnit;
@@ -266,6 +273,7 @@
     session = null;
     practiceTestSession = null;
     pictureSession = null;
+    lastMinuteSession = null;
     vocabularyFilter = "all";
     initSettings();
     renderHomeStats();
@@ -313,8 +321,8 @@
   }
 
   function showView(name) {
-    ["home", "vocabulary", "practice-test", "picture", "study", "summary"].forEach((view) => $(`#${view}-view`).classList.toggle("hidden", view !== name));
-    $("#study-home").classList.toggle("hidden", name === "home" || name === "vocabulary" || name === "practice-test" || name === "picture");
+    ["home", "vocabulary", "practice-test", "picture", "study", "summary", "last-minute", "last-minute-review", "last-minute-test", "last-minute-results"].forEach((view) => $(`#${view}-view`).classList.toggle("hidden", view !== name));
+    $("#study-home").classList.toggle("hidden", ["home", "vocabulary", "practice-test", "picture", "last-minute", "last-minute-review", "last-minute-test", "last-minute-results"].includes(name));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -723,9 +731,11 @@
 
   function goHome() {
     window.speechSynthesis?.cancel();
+    clearTimeout(lastMinuteTimer);
     session = null;
     practiceTestSession = null;
     pictureSession = null;
+    lastMinuteSession = null;
     renderHomeStats();
     showView("home");
   }
@@ -1421,6 +1431,157 @@
     showView("summary");
   }
 
+  function renderLastMinuteHistory() {
+    const stats = LAST_MINUTE.loadStats();
+    const best = stats.attempts.length ? Math.max(...stats.attempts.map((attempt) => attempt.percentage)) : null;
+    const mastered = Object.values(stats.mastery).filter((item) => item.attempts >= 2 && item.accuracy >= 80).length;
+    $("#last-minute-history").innerHTML = `
+      <article><strong>${stats.attempts.length}</strong><small>Rapid ${stats.attempts.length === 1 ? "test" : "tests"} completed</small></article>
+      <article><strong>${best === null ? "—" : `${best}%`}</strong><small>Best score</small></article>
+      <article><strong>${mastered} / 41</strong><small>Terms at 80%+ accuracy</small></article>`;
+  }
+
+  function openLastMinuteStudy() {
+    clearTimeout(lastMinuteTimer);
+    lastMinuteSession = null;
+    renderLastMinuteHistory();
+    showView("last-minute");
+  }
+
+  function renderLastMinuteReview(filter = lastMinuteFilter) {
+    lastMinuteFilter = filter;
+    const filters = [["all", "All 41"], ...LAST_MINUTE.categoryOrder.map((category) => [category, LAST_MINUTE.categoryLabels[category]])];
+    $("#last-minute-filters").innerHTML = filters.map(([value, label]) => `<button type="button" class="preset-button ${value === filter ? "selected" : ""}" data-last-minute-filter="${escapeHtml(value)}">${escapeHtml(label)}</button>`).join("");
+    const categories = filter === "all" ? LAST_MINUTE.categoryOrder : [filter];
+    const terms = LAST_MINUTE.terms.filter((term) => categories.includes(term.category));
+    $("#last-minute-review-count").textContent = `${terms.length} starred ${terms.length === 1 ? "term" : "terms"}`;
+    $("#last-minute-review-list").innerHTML = categories.map((category) => {
+      const rows = terms.filter((term) => term.category === category);
+      if (!rows.length) return "";
+      return `<section class="last-minute-review-group"><h2>${escapeHtml(LAST_MINUTE.categoryLabels[category])}</h2><div class="last-minute-term-table">${rows.map((term) => `<div class="last-minute-term-row"><strong>${escapeHtml(term.italian)}</strong><span>${escapeHtml(term.english)}</span></div>`).join("")}</div></section>`;
+    }).join("");
+  }
+
+  function openLastMinuteReview() {
+    lastMinuteFilter = "all";
+    renderLastMinuteReview();
+    showView("last-minute-review");
+  }
+
+  function startLastMinuteTest(termIds = null) {
+    clearTimeout(lastMinuteTimer);
+    const queue = LAST_MINUTE.createQueue(termIds, 30);
+    lastMinuteSession = {
+      queue, index: 0, answered: 0, correct: 0, current: null, selectedChoice: "", feedbackShown: false,
+      answerLog: [], repeatCounts: {}, lastKinds: {}, retryOnly: Boolean(termIds?.length)
+    };
+    showView("last-minute-test");
+    renderLastMinuteQuestion();
+  }
+
+  function renderLastMinuteQuestion() {
+    if (!lastMinuteSession || lastMinuteSession.index >= lastMinuteSession.queue.length) {
+      finishLastMinuteTest();
+      return;
+    }
+    const state = lastMinuteSession;
+    const termId = state.queue[state.index];
+    const q = LAST_MINUTE.generateQuestion(termId, state.lastKinds[termId] || "");
+    state.current = q;
+    state.lastKinds[termId] = q.kind;
+    state.selectedChoice = "";
+    state.feedbackShown = false;
+    $("#last-minute-question-number").textContent = `Question ${state.index + 1} of ${state.queue.length}`;
+    $("#last-minute-category").textContent = LAST_MINUTE.categoryLabels[q.category];
+    $("#last-minute-score").textContent = `${state.correct} / ${state.answered} correct`;
+    $("#last-minute-progress").style.width = `${Math.round((state.index / state.queue.length) * 100)}%`;
+    $("#last-minute-question").innerHTML = `<p class="prompt-kicker">${escapeHtml(q.kicker)}</p><h1><em>${escapeHtml(q.display)}</em></h1>`;
+    const answer = $("#last-minute-answer");
+    if (q.type === "choice") {
+      answer.innerHTML = `<div class="choice-list">${q.choices.map((choice, index) => `<button class="choice last-minute-choice" type="button" data-last-minute-choice="${escapeHtml(choice)}"><span class="choice-key">${index + 1}</span><span>${escapeHtml(choice)}</span></button>`).join("")}</div>`;
+      $$(".last-minute-choice").forEach((button) => button.addEventListener("click", () => {
+        if (state.feedbackShown) return;
+        state.selectedChoice = button.dataset.lastMinuteChoice;
+        $$(".last-minute-choice").forEach((item) => item.classList.toggle("selected", item === button));
+      }));
+    } else {
+      answer.innerHTML = '<label class="sr-only" for="last-minute-typed-answer">Your answer</label><input id="last-minute-typed-answer" class="typed-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type your answer…">';
+      $("#last-minute-typed-answer").focus();
+    }
+    $("#last-minute-feedback").className = "feedback hidden";
+    $("#check-last-minute-answer").classList.remove("hidden");
+    $("#check-last-minute-answer").disabled = false;
+  }
+
+  function scheduleLastMinuteRepeat(termId) {
+    const state = lastMinuteSession;
+    const repeats = state.repeatCounts[termId] || 0;
+    if (repeats >= 2) return;
+    state.repeatCounts[termId] = repeats + 1;
+    const distance = 4 + Math.floor(Math.random() * 3);
+    const insertion = Math.min(state.queue.length, state.index + distance);
+    state.queue.splice(insertion, 0, termId);
+  }
+
+  function checkLastMinuteAnswer() {
+    const state = lastMinuteSession;
+    if (!state || state.feedbackShown) return;
+    const q = state.current;
+    const userAnswer = q.type === "choice" ? state.selectedChoice : $("#last-minute-typed-answer")?.value || "";
+    if (!userAnswer.trim()) {
+      (q.type === "choice" ? $(".last-minute-choice") : $("#last-minute-typed-answer"))?.focus();
+      return;
+    }
+    const correct = q.accepted.some((accepted) => normalize(accepted) === normalize(userAnswer));
+    state.feedbackShown = true;
+    state.answered += 1;
+    if (correct) state.correct += 1;
+    else scheduleLastMinuteRepeat(q.termId);
+    state.answerLog.push({ termId: q.termId, kind: q.kind, answer: userAnswer, correct });
+    if (q.type === "text") $("#last-minute-typed-answer").disabled = true;
+    else $$(".last-minute-choice").forEach((button) => {
+      button.disabled = true;
+      if (normalize(button.dataset.lastMinuteChoice) === normalize(q.answer)) button.classList.add("correct-choice");
+      if (button.dataset.lastMinuteChoice === userAnswer && !correct) button.classList.add("wrong-choice");
+    });
+    const feedback = $("#last-minute-feedback");
+    feedback.className = `feedback ${correct ? "correct" : "incorrect"}`;
+    feedback.innerHTML = correct
+      ? `<strong>✓ Correct</strong><span>${escapeHtml(q.explanation)}</span>`
+      : `<strong>✗ Incorrect</strong><span>Your answer: ${escapeHtml(userAnswer)}</span><span>Correct answer: ${escapeHtml(q.answer)}</span>`;
+    $("#last-minute-score").textContent = `${state.correct} / ${state.answered} correct`;
+    $("#check-last-minute-answer").classList.add("hidden");
+    clearTimeout(lastMinuteTimer);
+    lastMinuteTimer = setTimeout(() => {
+      if (!lastMinuteSession || lastMinuteSession !== state) return;
+      state.index += 1;
+      renderLastMinuteQuestion();
+    }, correct ? 850 : 1700);
+  }
+
+  function finishLastMinuteTest() {
+    const state = lastMinuteSession;
+    if (!state) return;
+    clearTimeout(lastMinuteTimer);
+    LAST_MINUTE.saveAttempt(state.answerLog);
+    const missed = [...new Set(state.answerLog.filter((entry) => !entry.correct).map((entry) => entry.termId))];
+    lastMinuteLastMissed = missed;
+    const percent = state.answered ? Math.round((state.correct / state.answered) * 100) : 0;
+    $("#last-minute-result-percent").textContent = `${percent}%`;
+    $("#last-minute-result-fraction").textContent = `${state.correct} / ${state.answered} correct`;
+    if (!missed.length) {
+      $("#last-minute-review-again").innerHTML = '<div class="last-minute-perfect">✓ Perfect—none of the 41 starred targets need another pass.</div>';
+    } else {
+      $("#last-minute-review-again").innerHTML = `<h2>Review Again</h2>${LAST_MINUTE.categoryOrder.map((category) => {
+        const rows = missed.map((id) => LAST_MINUTE.term(id)).filter((term) => term?.category === category);
+        return rows.length ? `<section class="last-minute-missed-group"><h3>${escapeHtml(LAST_MINUTE.categoryLabels[category])}</h3><ul>${rows.map((term) => `<li><strong>${escapeHtml(term.italian)}</strong> = ${escapeHtml(term.english)}</li>`).join("")}</ul></section>` : "";
+      }).join("")}`;
+    }
+    $("#retry-last-minute-missed").classList.toggle("hidden", !missed.length);
+    lastMinuteSession = null;
+    showView("last-minute-results");
+  }
+
   function bindEvents() {
     $$('[data-unit]').forEach((button) => button.addEventListener("click", () => switchUnit(button.dataset.unit)));
     $$("[data-mode]").forEach((button) => button.addEventListener("click", () => startSession(button.dataset.mode)));
@@ -1433,6 +1594,20 @@
     $("#summary-home").addEventListener("click", goHome);
     $("#practice-again").addEventListener("click", () => startSession(session?.mode || "mixed"));
     $("#open-practice-test").addEventListener("click", () => startPracticeTest());
+    $("#open-last-minute").addEventListener("click", openLastMinuteStudy);
+    $("#last-minute-home").addEventListener("click", goHome);
+    $("#start-last-minute-test").addEventListener("click", () => startLastMinuteTest());
+    $("#review-last-minute-terms").addEventListener("click", openLastMinuteReview);
+    $("#last-minute-review-back").addEventListener("click", openLastMinuteStudy);
+    $("#last-minute-filters").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-last-minute-filter]");
+      if (button) renderLastMinuteReview(button.dataset.lastMinuteFilter);
+    });
+    $("#check-last-minute-answer").addEventListener("click", checkLastMinuteAnswer);
+    $("#exit-last-minute-test").addEventListener("click", openLastMinuteStudy);
+    $("#retry-last-minute-missed").addEventListener("click", () => startLastMinuteTest(lastMinuteLastMissed));
+    $("#new-last-minute-test").addEventListener("click", () => startLastMinuteTest());
+    $("#last-minute-results-home").addEventListener("click", goHome);
     $("#open-classroom-picture").addEventListener("click", startPicturePractice);
     $("#picture-home").addEventListener("click", goHome);
     $("#check-picture-answers").addEventListener("click", checkPictureAnswers);
@@ -1478,6 +1653,16 @@
     });
     $$("#emphasis, #question-count, #strictness, #number-range, #vocabulary-direction").forEach((control) => control.addEventListener("change", syncSettings));
     document.addEventListener("keydown", (event) => {
+      if (lastMinuteSession && !$("#last-minute-test-view").classList.contains("hidden")) {
+        if (lastMinuteSession.current?.type === "choice" && !lastMinuteSession.feedbackShown && ["1", "2", "3", "4"].includes(event.key)) {
+          const button = $$(".last-minute-choice")[Number(event.key) - 1];
+          if (button) { event.preventDefault(); button.click(); }
+        }
+        if (event.key === "Enter" && !lastMinuteSession.feedbackShown) {
+          event.preventDefault(); checkLastMinuteAnswer();
+        }
+        return;
+      }
       if (!session || $("#study-view").classList.contains("hidden")) return;
       if (session.current?.type === "mc" && !session.feedbackShown && ["1", "2", "3", "4"].includes(event.key)) {
         const button = $$(".choice")[Number(event.key) - 1];
