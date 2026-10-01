@@ -10,6 +10,7 @@
   const UNIT2_STORAGE_KEY = "italianPractice.unit2.v1";
   const UNIT2_SETTINGS_KEY = "italianPractice.settings.unit2.v1";
   const ACTIVE_UNIT_KEY = "italianPractice.activeUnit.v1";
+  const VOCABULARY_DIRECTION_KEY = "italianPractice.vocabularyDirection.v1";
   const UNIT2_TEST_ATTEMPTS_KEY = "italianPractice.unit2PracticeExam.v1";
   const CORE_CATEGORIES = [
     "Definite Articles", "Indefinite Articles", "Gender", "Singular → Plural",
@@ -144,7 +145,9 @@
     loaded.categories = expandTopics(loaded.topics, unit);
     if (!METHOD_LABELS[loaded.method] || loaded.method === "mistakes") loaded.method = "mixed";
     if (![...Object.keys(NUMBER_RANGES), "mixed"].includes(loaded.numberRange)) loaded.numberRange = "mixed";
-    if (!["mixed", "en-it", "it-en"].includes(loaded.vocabularyDirection)) loaded.vocabularyDirection = "mixed";
+    const sharedDirection = localStorage.getItem(VOCABULARY_DIRECTION_KEY);
+    if (["mixed", "en-it", "it-en"].includes(sharedDirection)) loaded.vocabularyDirection = sharedDirection;
+    else if (!["mixed", "en-it", "it-en"].includes(loaded.vocabularyDirection)) loaded.vocabularyDirection = "mixed";
     return loaded;
   }
 
@@ -162,6 +165,7 @@
 
   function saveSettings() {
     localStorage.setItem(settingsKey(), JSON.stringify(settings));
+    localStorage.setItem(VOCABULARY_DIRECTION_KEY, settings.vocabularyDirection);
   }
 
   function expandTopics(topics, unit = activeUnit) {
@@ -700,6 +704,13 @@
     };
     $("#session-topics").textContent = topicSummary(session.topics);
     $("#session-mode").textContent = METHOD_LABELS[mode];
+    const directionLabels = { mixed: "Mixed", "en-it": "English → Italian", "it-en": "Italian → English" };
+    const hasVocabularyTranslations = selectedCategories.some((category) => category === "Vocabulary" || [
+      "Personality Adjectives", "Physical Appearance", "Colors", "Nationalities", "School Subjects", "Classroom Objects",
+      "Avere Expressions", "Days / Agenda Vocabulary"
+    ].includes(category) || category.startsWith("Verb Vocabulary"));
+    $("#session-direction-wrap").classList.toggle("hidden", !hasVocabularyTranslations);
+    $("#session-direction").textContent = directionLabels[session.vocabularyDirection];
     showView("study");
     nextQuestion();
   }
