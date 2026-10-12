@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Focused beginner Italian grammar practice for articles, gender, and plural forms." />
     <title>Italian Practice</title>
-    <link rel="stylesheet" href="styles.css?v=20260930-3" />
+    <link rel="stylesheet" href="styles.css?v=20261012-1" />
   </head>
   <body>
     <div class="page-shell">
@@ -18,6 +18,7 @@
           <div class="unit-selector" aria-label="Choose study unit">
             <button type="button" data-unit="unit1" aria-pressed="true">Unit 1</button>
             <button type="button" data-unit="unit2" aria-pressed="false">Unit 2</button>
+            <button type="button" data-unit="unit3" aria-pressed="false">Unit 3</button>
           </div>
           <button class="quiet-button hidden" id="study-home" type="button">Exit session</button>
         </div>
@@ -32,6 +33,7 @@
               <p class="hero-copy" id="hero-copy">Fast, focused repetition for articles, gender, and plural forms—with your weak areas brought back at the right time.</p>
               <div class="hero-actions">
                 <button id="view-vocabulary" class="secondary-button" type="button">View Vocabulary</button>
+                <button id="open-learn" class="secondary-button hidden" type="button">Learn Unit 3</button>
                 <button id="open-practice-test" class="primary-button" type="button">Practice Test</button>
                 <button id="open-last-minute" class="primary-button last-minute-launch hidden" type="button">★ Last Minute Study</button>
               </div>
@@ -97,6 +99,11 @@
                 <span><strong>Label the Classroom</strong><small>Written picture-labeling rounds</small></span>
                 <span class="arrow" aria-hidden="true">→</span>
               </button>
+              <button class="mode-card family-tree-mode hidden" id="open-family-tree" type="button">
+                <span class="mode-icon green" aria-hidden="true">♧</span>
+                <span><strong>Family Tree Practice</strong><small>Reason through generated family relationships</small></span>
+                <span class="arrow" aria-hidden="true">→</span>
+              </button>
             </div>
             <div class="start-practice-row">
               <label>Questions<select id="question-count"><option>10</option><option selected>20</option><option>30</option><option>50</option><option value="unlimited">Unlimited</option></select></label>
@@ -124,6 +131,7 @@
               <article><span id="stat-correct">0</span><small>Correct</small></article>
               <article class="accuracy-stat"><span id="stat-accuracy">—</span><small>Accuracy</small></article>
             </div>
+            <div id="unit3-dashboard-extra" class="unit3-dashboard-extra hidden"></div>
             <div class="weak-header"><h3 id="weak-areas-title">Unit 1 Weak Areas</h3><span>Practice these next</span></div>
             <div id="weak-areas" class="weak-grid"></div>
           </section>
@@ -139,6 +147,17 @@
           </details>
         </section>
 
+        <section id="learn-view" class="view hidden">
+          <div class="learn-panel">
+            <div class="vocabulary-heading">
+              <div><p class="eyebrow">Unit 3 · Learn before practice</p><h1>Learn Unit 3 Grammar</h1><p>Choose a concept, study the rule, then try one question.</p></div>
+              <button id="learn-home" class="secondary-button" type="button">Back to home</button>
+            </div>
+            <nav id="learn-tabs" class="learn-tabs" aria-label="Unit 3 grammar lessons"></nav>
+            <article id="learn-card" class="learn-card"></article>
+          </div>
+        </section>
+
         <section id="vocabulary-view" class="view hidden">
           <div class="vocabulary-panel">
             <div class="vocabulary-heading">
@@ -150,7 +169,7 @@
               <label class="vocabulary-sort" for="vocabulary-sort"><span>Sort by</span><select id="vocabulary-sort"><option value="italian">Italian</option><option value="english">English</option></select></label>
               <div class="vocabulary-actions"><button id="show-all-vocabulary" class="text-button" type="button">Show all</button><button id="hide-all-vocabulary" class="text-button" type="button">Hide all</button></div>
             </div>
-            <div id="vocabulary-filters" class="vocabulary-filters hidden" aria-label="Filter Unit 2 vocabulary"></div>
+            <div id="vocabulary-filters" class="vocabulary-filters hidden" aria-label="Filter vocabulary"></div>
             <p id="vocabulary-count" class="vocabulary-count" aria-live="polite"></p>
             <div id="vocabulary-list" class="vocabulary-list"></div>
           </div>
@@ -289,9 +308,11 @@
 
     <script src="studyData.js?v=20260930-3"></script>
     <script src="unit2Data.js?v=20260930-3"></script>
+    <script src="unit3Data.js?v=20261012-1"></script>
     <script src="practiceTest.js?v=20260930-3"></script>
     <script src="unit2PracticeTest.js?v=20260930-3"></script>
+    <script src="unit3PracticeTest.js?v=20261012-1"></script>
     <script src="lastMinuteStudy.js?v=20260930-3"></script>
-    <script src="app.js?v=20260930-3"></script>
+    <script src="app.js?v=20261012-1"></script>
   </body>
 </html>

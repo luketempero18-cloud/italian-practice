@@ -3,16 +3,21 @@
 
   const DATA = window.STUDY_DATA;
   const UNIT2 = window.UNIT2_DATA;
+  const UNIT3 = window.UNIT3_DATA;
   const TEST = window.PRACTICE_TEST;
   const UNIT2_TEST = window.UNIT2_PRACTICE_TEST;
+  const UNIT3_TEST = window.UNIT3_PRACTICE_TEST;
   const LAST_MINUTE = window.LAST_MINUTE_STUDY;
   const STORAGE_KEY = "italianPractice.v1";
   const SETTINGS_KEY = "italianPractice.settings.v1";
   const UNIT2_STORAGE_KEY = "italianPractice.unit2.v1";
   const UNIT2_SETTINGS_KEY = "italianPractice.settings.unit2.v1";
+  const UNIT3_STORAGE_KEY = "italianPractice.unit3.v1";
+  const UNIT3_SETTINGS_KEY = "italianPractice.settings.unit3.v1";
   const ACTIVE_UNIT_KEY = "italianPractice.activeUnit.v1";
   const VOCABULARY_DIRECTION_KEY = "italianPractice.vocabularyDirection.v1";
   const UNIT2_TEST_ATTEMPTS_KEY = "italianPractice.unit2PracticeExam.v1";
+  const UNIT3_TEST_ATTEMPTS_KEY = "italianPractice.unit3PracticeTest.v1";
   const CORE_CATEGORIES = [
     "Definite Articles", "Indefinite Articles", "Gender", "Singular → Plural",
     "Plural → Singular", "Full Transformation"
@@ -56,7 +61,8 @@
   };
   const PRESET_LABELS = {
     unit1: { articles: "Articles + Gender", plurals: "Singular + Plural", nouns: "Noun Grammar", verbs: "Verbs", everything: "Everything" },
-    unit2: UNIT2.presetLabels
+    unit2: UNIT2.presetLabels,
+    unit3: UNIT3.presetLabels
   };
   const METHOD_LABELS = { mc: "Multiple Choice", typed: "Written", matching: "Matching", mixed: "Mixed", mistakes: "Mistakes Only" };
   const NOUN_CATEGORIES = [
@@ -95,27 +101,27 @@
   }
 
   function progressKey(unit = activeUnit) {
-    return unit === "unit2" ? UNIT2_STORAGE_KEY : STORAGE_KEY;
+    return unit === "unit3" ? UNIT3_STORAGE_KEY : unit === "unit2" ? UNIT2_STORAGE_KEY : STORAGE_KEY;
   }
 
   function settingsKey(unit = activeUnit) {
-    return unit === "unit2" ? UNIT2_SETTINGS_KEY : SETTINGS_KEY;
+    return unit === "unit3" ? UNIT3_SETTINGS_KEY : unit === "unit2" ? UNIT2_SETTINGS_KEY : SETTINGS_KEY;
   }
 
   function topicGroups(unit = activeUnit) {
-    return unit === "unit2" ? UNIT2.topicGroups : UNIT1_TOPIC_GROUPS;
+    return unit === "unit3" ? UNIT3.topicGroups : unit === "unit2" ? UNIT2.topicGroups : UNIT1_TOPIC_GROUPS;
   }
 
   function allTopics(unit = activeUnit) {
-    return unit === "unit2" ? UNIT2.topics : UNIT1_ALL_TOPICS;
+    return unit === "unit3" ? UNIT3.topics : unit === "unit2" ? UNIT2.topics : UNIT1_ALL_TOPICS;
   }
 
   function presets(unit = activeUnit) {
-    return unit === "unit2" ? UNIT2.presets : UNIT1_PRESETS;
+    return unit === "unit3" ? UNIT3.presets : unit === "unit2" ? UNIT2.presets : UNIT1_PRESETS;
   }
 
   function currentCategories(unit = activeUnit) {
-    return unit === "unit2" ? UNIT2.categories : DATA.categories;
+    return unit === "unit3" ? UNIT3.categories : unit === "unit2" ? UNIT2.categories : DATA.categories;
   }
 
   function loadProgress(unit = activeUnit) {
@@ -130,10 +136,10 @@
     return clean;
   }
 
-  let activeUnit = localStorage.getItem(ACTIVE_UNIT_KEY) === "unit2" ? "unit2" : "unit1";
+  let activeUnit = ["unit1", "unit2", "unit3"].includes(localStorage.getItem(ACTIVE_UNIT_KEY)) ? localStorage.getItem(ACTIVE_UNIT_KEY) : "unit1";
 
   function defaultSettings(unit = activeUnit) {
-    const topics = unit === "unit2" ? [...(UNIT2.defaultTopics || UNIT2.topics)] : [...DATA.categories];
+    const topics = unit === "unit3" ? [...(UNIT3.defaultTopics || UNIT3.topics)] : unit === "unit2" ? [...(UNIT2.defaultTopics || UNIT2.topics)] : [...DATA.categories];
     return { topics, categories: expandTopics(topics, unit), method: "mixed", emphasis: "balanced", count: "20", strictness: "normal", numberRange: "mixed", vocabularyDirection: "mixed" };
   }
 
@@ -142,7 +148,7 @@
     const stored = loadJSON(settingsKey(unit), {});
     const loaded = { ...defaults, ...stored };
     const savedTopics = Array.isArray(stored.topics) ? stored.topics : (Array.isArray(stored.categories) ? stored.categories : defaults.topics);
-    loaded.topics = unit === "unit2" ? UNIT2.migrateTopics(savedTopics) : savedTopics.filter((topic) => allTopics(unit).includes(topic));
+    loaded.topics = unit === "unit3" ? UNIT3.migrateTopics(savedTopics) : unit === "unit2" ? UNIT2.migrateTopics(savedTopics) : savedTopics.filter((topic) => allTopics(unit).includes(topic));
     loaded.categories = expandTopics(loaded.topics, unit);
     if (!METHOD_LABELS[loaded.method] || loaded.method === "mistakes") loaded.method = "mixed";
     if (![...Object.keys(NUMBER_RANGES), "mixed"].includes(loaded.numberRange)) loaded.numberRange = "mixed";
@@ -163,6 +169,7 @@
   let lastMinuteLastMissed = [];
   let lastPictureIds = [];
   let vocabularyFilter = "all";
+  let learnCardKey = "Regular -ERE Verbs";
 
   function saveProgress() {
     localStorage.setItem(progressKey(), JSON.stringify(progress));
@@ -174,6 +181,7 @@
   }
 
   function expandTopics(topics, unit = activeUnit) {
+    if (unit === "unit3") return UNIT3.expandTopics(topics);
     if (unit === "unit2") return UNIT2.expandTopics(topics);
     const expanded = topics.flatMap((topic) => topic === MIXED_NOUN_TOPIC ? CORE_CATEGORIES : [topic]);
     return [...new Set(expanded)].filter((category) => DATA.categories.includes(category));
@@ -238,7 +246,7 @@
   }
 
   function updateUnitInterface() {
-    const unitLabel = activeUnit === "unit2" ? "Unit 2" : "Unit 1";
+    const unitLabel = activeUnit === "unit3" ? "Unit 3" : activeUnit === "unit2" ? "Unit 2" : "Unit 1";
     $$('[data-unit]').forEach((button) => {
       const selected = button.dataset.unit === activeUnit;
       button.classList.toggle("selected", selected);
@@ -246,22 +254,25 @@
     });
     $("#brand-unit-label").textContent = `${unitLabel} study lab`;
     $("#home-unit-label").textContent = unitLabel;
-    $("#hero-copy").textContent = activeUnit === "unit2"
-      ? "Focused Exam 2 and Unit 2 practice for course vocabulary, adjectives, avere, regular and irregular verbs, listening, and classroom usage."
-      : "Fast, focused repetition for articles, gender, and plural forms—with your weak areas brought back at the right time.";
+    $("#hero-copy").textContent = activeUnit === "unit3"
+      ? "Learn and practice family vocabulary, -ERE and -IRE verbs, -isc patterns, possessives, and family-tree reasoning."
+      : activeUnit === "unit2" ? "Focused Exam 2 and Unit 2 practice for course vocabulary, adjectives, avere, regular and irregular verbs, listening, and classroom usage."
+        : "Fast, focused repetition for articles, gender, and plural forms—with your weak areas brought back at the right time.";
     $("#weak-areas-title").textContent = `${unitLabel} Weak Areas`;
     $("#vocabulary-unit-label").textContent = `${unitLabel} study reference`;
-    $("#number-range-control").classList.toggle("hidden", activeUnit === "unit2");
-    $("#emphasis-control").classList.toggle("hidden", activeUnit === "unit2");
+    $("#number-range-control").classList.toggle("hidden", activeUnit !== "unit1");
+    $("#emphasis-control").classList.toggle("hidden", activeUnit !== "unit1");
     $("#open-classroom-picture").classList.toggle("hidden", activeUnit !== "unit2");
     $("#open-last-minute").classList.toggle("hidden", activeUnit !== "unit2");
+    $("#open-learn").classList.toggle("hidden", activeUnit !== "unit3");
+    $("#open-family-tree").classList.toggle("hidden", activeUnit !== "unit3");
     const testButton = $("#open-practice-test");
     testButton.disabled = false;
-    testButton.textContent = activeUnit === "unit2" ? "★ Practice Exam 2" : "Practice Test";
+    testButton.textContent = activeUnit === "unit3" ? "Unit 3 Practice Test" : activeUnit === "unit2" ? "★ Practice Exam 2" : "Practice Test";
   }
 
   function switchUnit(nextUnit) {
-    if (nextUnit === activeUnit || !["unit1", "unit2"].includes(nextUnit)) return;
+    if (nextUnit === activeUnit || !["unit1", "unit2", "unit3"].includes(nextUnit)) return;
     if ((session || practiceTestSession || lastMinuteSession) && !window.confirm("Changing units will end the current study session. Continue?")) return;
     clearTimeout(lastMinuteTimer);
     window.speechSynthesis?.cancel();
@@ -302,6 +313,17 @@
     $("#stat-correct").textContent = today.correct;
     $("#stat-accuracy").textContent = today.answered ? `${accuracy(today)}%` : "—";
 
+    const unit3Extra = $("#unit3-dashboard-extra");
+    unit3Extra.classList.toggle("hidden", activeUnit !== "unit3");
+    if (activeUnit === "unit3") {
+      const itemStats = Object.values(progress.items);
+      const mastered = itemStats.filter((item) => item.attempts >= 2 && (item.correct / item.attempts) >= 0.8).length;
+      const learning = itemStats.filter((item) => item.attempts > 0 && !(item.attempts >= 2 && (item.correct / item.attempts) >= 0.8)).length;
+      const streak = progress.currentStreak || 0;
+      const mistakeCount = Object.keys(progress.mistakes).length;
+      unit3Extra.innerHTML = `<article><strong>${streak}</strong><small>Current streak</small></article><article><strong>${mastered}</strong><small>Terms mastered</small></article><article><strong>${learning}</strong><small>Terms learning</small></article><article><strong>${mistakeCount}</strong><small>Mistakes</small></article>`;
+    }
+
     const mistakes = Object.values(progress.mistakes).reduce((total, item) => total + Math.max(1, item.misses || 1), 0);
     $("#mistake-count-label").textContent = mistakes ? `${mistakes} review ${mistakes === 1 ? "item" : "items"} ready` : "No mistakes waiting";
 
@@ -321,8 +343,8 @@
   }
 
   function showView(name) {
-    ["home", "vocabulary", "practice-test", "picture", "study", "summary", "last-minute", "last-minute-review", "last-minute-test", "last-minute-results"].forEach((view) => $(`#${view}-view`).classList.toggle("hidden", view !== name));
-    $("#study-home").classList.toggle("hidden", ["home", "vocabulary", "practice-test", "picture", "last-minute", "last-minute-review", "last-minute-test", "last-minute-results"].includes(name));
+    ["home", "learn", "vocabulary", "practice-test", "picture", "study", "summary", "last-minute", "last-minute-review", "last-minute-test", "last-minute-results"].forEach((view) => $(`#${view}-view`).classList.toggle("hidden", view !== name));
+    $("#study-home").classList.toggle("hidden", ["home", "learn", "vocabulary", "practice-test", "picture", "last-minute", "last-minute-review", "last-minute-test", "last-minute-results"].includes(name));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -351,7 +373,7 @@
   function renderPracticeTest() {
     const test = practiceTestSession.test;
     const questionCount = practiceTestQuestionCount();
-    $("#practice-test-unit-label").textContent = test.unit === "unit2" ? "Unit 2 · Exam simulation" : "Unit 1";
+    $("#practice-test-unit-label").textContent = test.unit === "unit3" ? "Unit 3 · Practice Test" : test.unit === "unit2" ? "Unit 2 · Exam simulation" : "Unit 1";
     $("#practice-test-title").textContent = test.title;
     $("#practice-test-total").textContent = `${test.totalPoints || questionCount} points total`;
     $("#submit-practice-test").textContent = test.unit === "unit2" ? "Submit Practice Exam" : "Submit Practice Test";
@@ -409,8 +431,8 @@
 
   function startPracticeTest(previousSignature = "") {
     session = null;
-    const module = activeUnit === "unit2" ? UNIT2_TEST : TEST;
-    const test = activeUnit === "unit2" ? module.generateTest(UNIT2, previousSignature) : module.generateTest(DATA, previousSignature);
+    const module = activeUnit === "unit3" ? UNIT3_TEST : activeUnit === "unit2" ? UNIT2_TEST : TEST;
+    const test = activeUnit === "unit3" ? module.generateTest(UNIT3, previousSignature) : activeUnit === "unit2" ? module.generateTest(UNIT2, previousSignature) : module.generateTest(DATA, previousSignature);
     practiceTestSession = { test, module, unit: activeUnit, submitted: false };
     renderPracticeTest();
     showView("practice-test");
@@ -439,11 +461,28 @@
     localStorage.setItem(UNIT2_TEST_ATTEMPTS_KEY, JSON.stringify(attempts.slice(0, 30)));
   }
 
+  function saveUnit3PracticeAttempt(grade) {
+    const attempts = loadJSON(UNIT3_TEST_ATTEMPTS_KEY, []);
+    attempts.unshift({ createdAt: practiceTestSession.test.createdAt, submittedAt: Date.now(), signature: practiceTestSession.test.signature,
+      score: grade.score, total: grade.total, percentage: grade.percentage,
+      sections: Object.fromEntries(Object.entries(grade.sectionScores).map(([id, value]) => [id, { correct: value.correct, total: value.total }])) });
+    localStorage.setItem(UNIT3_TEST_ATTEMPTS_KEY, JSON.stringify(attempts.slice(0, 30)));
+  }
+
   function addUnit2ExamMistakes(grade) {
     grade.results.filter((result) => !result.correct && UNIT2.categories.includes(result.category)).forEach((result) => {
       const key = `${result.category}:${result.id}`;
       progress.mistakes[key] = { key, category: result.category, sourceId: result.id, label: result.label,
         misses: (progress.mistakes[key]?.misses || 0) + 1, streak: 0, lastMiss: Date.now(), fromPracticeExam: true };
+    });
+    saveProgress();
+  }
+
+  function addUnit3TestMistakes(grade) {
+    grade.results.filter((result) => !result.correct && UNIT3.categories.includes(result.category)).forEach((result) => {
+      const key = `${result.category}|${result.id}`;
+      progress.mistakes[key] = { key, category: result.category, sourceId: result.sourceId || result.id, label: result.label,
+        misses: (progress.mistakes[key]?.misses || 0) + 1, streak: 0, lastMiss: Date.now(), fromPracticeTest: true };
     });
     saveProgress();
   }
@@ -465,12 +504,15 @@
     const missedHtml = missed.length ? missed.map((result) => `<article><strong>${escapeHtml(result.sectionTitle)}</strong><p>${escapeHtml(result.label)}</p><span>Your answer: ${escapeHtml(result.studentAnswer || "Unanswered")}</span><span>Correct answer: ${escapeHtml(result.answer)}</span><small>${escapeHtml(result.explanation)}</small></article>`).join("") : '<p class="perfect-test">Perfect score—every answer is correct.</p>';
     const reviewTopics = grade.reviewTopics?.length ? `<div class="practice-test-topics"><h2>Topics to review</h2><div>${grade.reviewTopics.map((topic) => `<span>${escapeHtml(topic.title)} · ${Math.round(topic.percentage)}%</span>`).join("")}</div></div>` : "";
     const results = $("#practice-test-results");
-    results.innerHTML = `<div class="practice-test-complete"><span class="summary-mark" aria-hidden="true">✓</span><p class="eyebrow">${practiceTestSession.unit === "unit2" ? "Practice Exam 2 Complete" : "Practice Test Complete"}</p><h2>Score: ${grade.score} / ${grade.total}</h2><strong>Percentage: ${grade.percentage.toFixed(1)}%</strong></div><div class="practice-test-section-scores">${sectionScores}</div>${reviewTopics}<div class="practice-test-review"><h2>${missed.length ? "Review missed questions" : "Ben fatto!"}</h2>${missedHtml}</div><div class="practice-test-result-actions"><button id="generate-new-test" class="primary-button" type="button">${practiceTestSession.unit === "unit2" ? "Retake With New Questions" : "Generate New Test"}</button><button id="practice-test-results-home" class="secondary-button" type="button">Back to home</button></div>`;
+    results.innerHTML = `<div class="practice-test-complete"><span class="summary-mark" aria-hidden="true">✓</span><p class="eyebrow">${practiceTestSession.unit === "unit2" ? "Practice Exam 2 Complete" : practiceTestSession.unit === "unit3" ? "Unit 3 Practice Test Complete" : "Practice Test Complete"}</p><h2>Score: ${grade.score} / ${grade.total}</h2><strong>Percentage: ${grade.percentage.toFixed(1)}%</strong></div><div class="practice-test-section-scores">${sectionScores}</div>${reviewTopics}<div class="practice-test-review"><h2>${missed.length ? "Review missed questions" : "Ben fatto!"}</h2>${missedHtml}</div><div class="practice-test-result-actions"><button id="generate-new-test" class="primary-button" type="button">${practiceTestSession.unit === "unit2" ? "Retake With New Questions" : "Generate New Test"}</button><button id="practice-test-results-home" class="secondary-button" type="button">Back to home</button></div>`;
     if (practiceTestSession.unit === "unit2") {
       saveUnit2PracticeAttempt(grade);
       addUnit2ExamMistakes(grade);
       $$(".practice-transcript").forEach((transcript) => transcript.classList.remove("hidden"));
       window.speechSynthesis?.cancel();
+    } else if (practiceTestSession.unit === "unit3") {
+      saveUnit3PracticeAttempt(grade);
+      addUnit3TestMistakes(grade);
     }
     results.classList.remove("hidden");
     $("#generate-new-test").addEventListener("click", () => startPracticeTest(practiceTestSession.test.signature));
@@ -479,6 +521,7 @@
   }
 
   function vocabularyEntries() {
+    if (activeUnit === "unit3") return UNIT3.vocabulary.map((entry) => ({ ...entry, variants: [] }));
     if (activeUnit === "unit2") return UNIT2.vocabulary.map((entry) => ({ ...entry, variants: [] }));
     const grouped = new Map();
     DATA.nouns.forEach((noun) => {
@@ -518,12 +561,13 @@
     const query = normalize($("#vocabulary-search").value);
     const sortBy = $("#vocabulary-sort").value;
     const filters = $("#vocabulary-filters");
-    filters.classList.toggle("hidden", activeUnit !== "unit2");
-    if (activeUnit === "unit2") {
-      filters.innerHTML = UNIT2.vocabularyFilters.map(([value, label]) => `<button type="button" class="preset-button ${vocabularyFilter === value ? "selected" : ""}" data-vocabulary-filter="${value}">${escapeHtml(label)}</button>`).join("");
+    filters.classList.toggle("hidden", activeUnit === "unit1");
+    if (activeUnit === "unit2" || activeUnit === "unit3") {
+      const module = activeUnit === "unit3" ? UNIT3 : UNIT2;
+      filters.innerHTML = module.vocabularyFilters.map(([value, label]) => `<button type="button" class="preset-button ${vocabularyFilter === value ? "selected" : ""}" data-vocabulary-filter="${value}">${escapeHtml(label)}</button>`).join("");
     } else filters.innerHTML = "";
     const entries = vocabularyEntries()
-      .filter((entry) => activeUnit !== "unit2" || vocabularyFilter === "all" || entry.groups?.includes(vocabularyFilter))
+      .filter((entry) => activeUnit === "unit1" || vocabularyFilter === "all" || entry.groups?.includes(vocabularyFilter))
       .filter((entry) => !query || normalize(entry.italian).includes(query) || normalize(entry.english).includes(query))
       .sort((a, b) => (sortBy === "english" ? a.english.localeCompare(b.english, "en") : a.italian.localeCompare(b.italian, "it-IT")));
     $("#vocabulary-count").textContent = `${entries.length} ${entries.length === 1 ? "entry" : "entries"}`;
@@ -533,7 +577,11 @@
       const isOpen = expanded === true || (expanded instanceof Set && expanded.has(key));
       const unique = (field) => [...new Set(variants.map((item) => item[field]))];
       let unit2Grammar = "";
-      if (activeUnit === "unit2" && entry.forms && entry.family) {
+      if (activeUnit === "unit3" && entry.forms && entry.infinitive) {
+        unit2Grammar = `<div class="vocabulary-grammar"><div><small>Verb type</small><b>${escapeHtml(entry.verbType || entry.conjugationType)}</b></div><div><small>Singular subjects</small><b>${escapeHtml(`io ${entry.forms.io} · tu ${entry.forms.tu} · lui/lei ${entry.forms["lui/lei/Lei"]}`)}</b></div><div><small>Plural subjects</small><b>${escapeHtml(`noi ${entry.forms.noi} · voi ${entry.forms.voi} · loro ${entry.forms.loro}`)}</b></div></div>`;
+      } else if (activeUnit === "unit3" && entry.gender) {
+        unit2Grammar = `<div class="vocabulary-grammar"><div><small>Gender</small><b>${escapeHtml(entry.gender)}</b></div><div><small>Base form</small><b>${escapeHtml(entry.base || entry.italian)}</b></div>${entry.ambiguity ? `<div><small>Context note</small><b>${escapeHtml(entry.ambiguity)}</b></div>` : ""}</div>`;
+      } else if (activeUnit === "unit2" && entry.forms && entry.family) {
         unit2Grammar = `<div class="vocabulary-grammar"><div><small>Adjective family</small><b>${escapeHtml(entry.family === "fourEnding" ? "Four-ending" : entry.family === "twoEnding" ? "Two-ending" : entry.family === "ista" ? "-ista" : "Invariant")}</b></div><div><small>Masculine</small><b>${escapeHtml(entry.forms.ms)} · ${escapeHtml(entry.forms.mp)}</b></div><div><small>Feminine</small><b>${escapeHtml(entry.forms.fs)} · ${escapeHtml(entry.forms.fp)}</b></div>${entry.opposites?.length ? `<div><small>Opposite</small><b>${escapeHtml(entry.opposites.join(" / "))}</b></div>` : ""}</div>`;
       } else if (activeUnit === "unit2" && entry.forms && entry.infinitive) {
         unit2Grammar = `<div class="vocabulary-grammar"><div><small>Singular subjects</small><b>${escapeHtml(`io ${entry.forms.io} · tu ${entry.forms.tu} · lui/lei ${entry.forms["lui/lei/Lei"]}`)}</b></div><div><small>Plural subjects</small><b>${escapeHtml(`noi ${entry.forms.noi} · voi ${entry.forms.voi} · loro ${entry.forms.loro}`)}</b></div></div>`;
@@ -558,6 +606,33 @@
     $("#vocabulary-search").value = "";
     renderVocabulary(new Set());
     showView("vocabulary");
+  }
+
+  function renderLearnCard(key = learnCardKey) {
+    learnCardKey = UNIT3.learnCards[key] ? key : Object.keys(UNIT3.learnCards)[0];
+    const card = UNIT3.learnCards[learnCardKey];
+    $("#learn-tabs").innerHTML = Object.keys(UNIT3.learnCards).map((name) => `<button type="button" class="preset-button ${name === learnCardKey ? "selected" : ""}" data-learn-card="${escapeHtml(name)}">${escapeHtml(name)}</button>`).join("");
+    $("#learn-card").innerHTML = `<p class="eyebrow">Rule</p><h2>${escapeHtml(card.title)}</h2><p class="learn-rule">${escapeHtml(card.rule)}</p><div class="learn-chart">${card.chart.map(([label, value]) => `<div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(value)}</span></div>`).join("")}</div><section><h3>Examples</h3><ul>${card.examples.map((example) => `<li>${escapeHtml(example)}</li>`).join("")}</ul></section><aside class="learn-mistake"><strong>Common mistake</strong><span>${escapeHtml(card.mistake)}</span></aside><section class="learn-try"><h3>Try one</h3><p>${escapeHtml(card.tryOne)}</p><div><input id="learn-try-answer" class="typed-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type your answer…"><button id="check-learn-answer" class="primary-button" type="button">Check</button></div><div id="learn-try-feedback" class="feedback hidden" role="status"></div></section>`;
+    $("#check-learn-answer").addEventListener("click", () => {
+      const input = $("#learn-try-answer");
+      if (!input.value.trim()) return input.focus();
+      const correct = normalize(input.value) === normalize(card.tryAnswer);
+      const feedback = $("#learn-try-feedback");
+      feedback.className = `feedback ${correct ? "correct" : "incorrect"}`;
+      feedback.innerHTML = correct ? `<strong>✓ Correct</strong><span>${escapeHtml(card.tryAnswer)}</span>` : `<strong>Not yet</strong><span>Correct answer: ${escapeHtml(card.tryAnswer)}</span>`;
+    });
+  }
+
+  function openLearn() {
+    session = null;
+    renderLearnCard();
+    showView("learn");
+  }
+
+  function startFamilyTreePractice() {
+    setTopics(["Family Tree Practice"]);
+    selectMethod("mixed");
+    startSession("mixed");
   }
 
   function choosePictureItems() {
@@ -654,7 +729,7 @@
   }
 
   function matchingCategoryEligible(category, numberRange = settings.numberRange) {
-    const matchingCategories = activeUnit === "unit2" ? UNIT2.matchingCategories : UNIT1_MATCHING_CATEGORIES;
+    const matchingCategories = activeUnit === "unit3" ? UNIT3.matchingCategories : activeUnit === "unit2" ? UNIT2.matchingCategories : UNIT1_MATCHING_CATEGORIES;
     return matchingCategories.includes(category) && (category !== "Numbers" || numberRange === "basic");
   }
 
@@ -715,7 +790,8 @@
     const directionLabels = { mixed: "Mixed", "en-it": "English → Italian", "it-en": "Italian → English" };
     const hasVocabularyTranslations = selectedCategories.some((category) => category === "Vocabulary" || [
       "Personality Adjectives", "Physical Appearance", "Colors", "Nationalities", "School Subjects", "Classroom Objects",
-      "Avere Expressions", "Days / Agenda Vocabulary"
+      "Avere Expressions", "Days / Agenda Vocabulary", "Core Family Vocabulary", "Extended Family Vocabulary",
+      "Family Relationships / Status", "-ERE Verb Vocabulary", "-IRE Verb Vocabulary"
     ].includes(category) || category.startsWith("Verb Vocabulary"));
     $("#session-direction-wrap").classList.toggle("hidden", !hasVocabularyTranslations);
     $("#session-direction").textContent = directionLabels[session.vocabularyDirection];
@@ -770,6 +846,7 @@
   }
 
   function mistakeIsEligible(item) {
+    if (activeUnit === "unit3") return UNIT3.isSourceEligible(item.category, item.sourceId);
     if (activeUnit === "unit2") return UNIT2.isSourceEligible(item.category, item.sourceId);
     return item.category !== "Gender" || eligibleNouns("Gender").some((noun) => noun.id === item.sourceId);
   }
@@ -983,6 +1060,7 @@
   }
 
   function makeQuestion(category, sourceId = null) {
+    if (activeUnit === "unit3") return UNIT3.makeQuestion(category, sourceId, DATA, session?.vocabularyDirection || settings.vocabularyDirection);
     if (activeUnit === "unit2") return UNIT2.makeQuestion(category, sourceId, DATA, session?.vocabularyDirection || settings.vocabularyDirection);
     let noun = NOUN_CATEGORIES.includes(category) && category !== "Definite Articles" ? pickNoun(sourceId, category) : null;
     let q;
@@ -1150,8 +1228,9 @@
     [question.answer, ...shuffle(question.distractors || [])].forEach((choice) => {
       if (choice !== undefined && choice !== null && !unique.some((value) => normalize(value) === normalize(choice))) unique.push(String(choice));
     });
-    const target = question.category === "Gender" || question.category === "Formal vs Informal" || question.category === "C'è / Ci sono" || (activeUnit === "unit2" && question.category === "Piacere") ? 2 : 4;
-    const fallbacks = activeUnit === "unit2" ? [] : ["il", "lo", "la", "l'", "i", "gli", "le", "un", "uno", "una", "un'"];
+    const binary = unique.length === 2 && unique.every((value) => ["vero", "falso", "true", "false"].includes(normalize(value)));
+    const target = binary || question.category === "Gender" || question.category === "Formal vs Informal" || question.category === "C'è / Ci sono" || (activeUnit === "unit2" && question.category === "Piacere") ? 2 : 4;
+    const fallbacks = activeUnit === "unit1" ? ["il", "lo", "la", "l'", "i", "gli", "le", "un", "uno", "una", "un'"] : [];
     for (const fallback of fallbacks) {
       if (unique.length >= target) break;
       if (!unique.some((value) => normalize(value) === normalize(fallback))) unique.push(fallback);
@@ -1179,7 +1258,7 @@
     $("#next-question").classList.add("hidden");
     $("#keyboard-hint").classList.remove("hidden");
 
-    const type = chooseQuestionType();
+    let type = chooseQuestionType();
     if (type === "matching") {
       const category = pickMatchingCategory();
       session.categoryCounts[category] = (session.categoryCounts[category] || 0) + 1;
@@ -1190,7 +1269,8 @@
       for (let attempt = 0; attempt < 12; attempt += 1) {
         category = pickCategory();
         question = makeQuestion(category, preferredSource(category));
-        const recentlySeen = activeUnit === "unit2" ? session.recentSources.includes(question.sourceId) : session.recentIds.includes(question.id);
+        if (question.forceChoice) type = "mc";
+        const recentlySeen = activeUnit !== "unit1" ? session.recentSources.includes(question.sourceId) : session.recentIds.includes(question.id);
         if (session.mode === "mistakes" || !recentlySeen || attempt === 11) break;
       }
       session.categoryCounts[category] = (session.categoryCounts[category] || 0) + 1;
@@ -1320,6 +1400,7 @@
     progress.today.answered += 1;
     const exact = result === "correct";
     if (exact) { session.correct += 1; progress.today.correct += 1; }
+    progress.currentStreak = exact ? (progress.currentStreak || 0) + 1 : 0;
     if (result === "almost") { session.almost += 1; progress.today.almost += 1; }
     const categoryStats = progress.categories[q.category] || { answered: 0, correct: 0 };
     categoryStats.answered += 1;
@@ -1343,7 +1424,8 @@
         key, category: q.category, sourceId: q.sourceId, label: q.display,
         misses: (progress.mistakes[key]?.misses || 0) + 1, streak: 0, lastMiss: Date.now()
       };
-      progress.reviewQueue.push({ category: q.category, sourceId: q.sourceId, due: progress.today.answered + 4 });
+      const delay = activeUnit === "unit3" ? 8 + Math.floor(Math.random() * 3) : 4;
+      progress.reviewQueue.push({ category: q.category, sourceId: q.sourceId, due: progress.today.answered + delay });
       progress.reviewQueue = progress.reviewQueue.slice(-40);
     }
     progress.items[key] = item;
@@ -1357,6 +1439,7 @@
   }
 
   function makeMatchingQuestion(category) {
+    if (activeUnit === "unit3") return UNIT3.makeMatchingQuestion(category);
     if (activeUnit === "unit2") return UNIT2.makeMatchingQuestion(category);
     let pairs = [];
     if (["Singular → Plural", "Plural → Singular", "Full Transformation"].includes(category)) {
@@ -1594,6 +1677,13 @@
     $("#summary-home").addEventListener("click", goHome);
     $("#practice-again").addEventListener("click", () => startSession(session?.mode || "mixed"));
     $("#open-practice-test").addEventListener("click", () => startPracticeTest());
+    $("#open-learn").addEventListener("click", openLearn);
+    $("#learn-home").addEventListener("click", goHome);
+    $("#learn-tabs").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-learn-card]");
+      if (button) renderLearnCard(button.dataset.learnCard);
+    });
+    $("#open-family-tree").addEventListener("click", startFamilyTreePractice);
     $("#open-last-minute").addEventListener("click", openLastMinuteStudy);
     $("#last-minute-home").addEventListener("click", goHome);
     $("#start-last-minute-test").addEventListener("click", () => startLastMinuteTest());
