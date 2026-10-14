@@ -11,7 +11,11 @@
     }
     return copy;
   };
-  const splitMeanings = (value) => [...new Set([value, ...value.split(" / ").map((part) => part.trim()), ...value.split(" / ").map((part) => part.trim().replace(/^to\s+/, ""))])];
+  const splitMeanings = (value) => {
+    const parts = value.split(" / ").map((part) => part.trim());
+    const infinitiveParts = value.startsWith("to ") ? parts.map((part) => part.startsWith("to ") ? part : `to ${part}`) : [];
+    return [...new Set([value, ...parts, ...infinitiveParts, ...parts.map((part) => part.replace(/^to\s+/, ""))])];
+  };
   const baseQuestion = (category, sourceId, id, kicker, display, answer, explanation, distractors = [], accepted = [answer]) => ({
     category, sourceId, id, kicker, display, answer, accepted, explanation, distractors
   });
@@ -104,10 +108,11 @@
     "Family Relationships / Status": FAMILY_RELATIONSHIPS,
     "-ERE Verb Vocabulary": ERE,
     "-IRE Verb Vocabulary": IRE,
+    "-IRE + -ISC Verb Vocabulary": ISC
   };
   const CATEGORIES = [
     "Core Family Vocabulary", "Extended Family Vocabulary", "Family Relationships / Status", "Family Tree Practice",
-    "-ERE Verb Vocabulary", "Regular -ERE Verbs", "-IRE Verb Vocabulary", "Regular -IRE Verbs", "-IRE Verbs with -ISC", "Mixed -ERE / -IRE Conjugation",
+    "-ERE Verb Vocabulary", "Regular -ERE Verbs", "-IRE Verb Vocabulary", "Regular -IRE Verbs", "-IRE + -ISC Verb Vocabulary", "-IRE Verbs with -ISC", "Mixed -ERE / -IRE Conjugation",
     "Possessive Adjectives", "Possessives with Family Members", "Possessive Pronouns", "Possessives with DI", "Mixed Possessives", "Culture & Recognition"
   ];
   const TOPIC_GROUPS = [
@@ -116,8 +121,9 @@
       ["Family Relationships / Status", "Status, stepfamily, older / younger"], ["Family Tree Practice", "Relationship reasoning"]
     ] },
     { name: "Verbs", topics: [
-      ["-ERE Verb Vocabulary", "Meanings only"], ["Regular -ERE Verbs", "Present tense"], ["-IRE Verb Vocabulary", "Meanings only"],
-      ["Regular -IRE Verbs", "Present tense"], ["-IRE Verbs with -ISC", "IO/TU/LUI-LEI/LORO use -isc-"],
+      ["-ERE Verb Vocabulary", "Learn what -ERE verbs mean"], ["Regular -ERE Verbs", "Learn to conjugate them"],
+      ["-IRE Verb Vocabulary", "Learn what regular -IRE verbs mean"], ["Regular -IRE Verbs", "Learn to conjugate them"],
+      ["-IRE + -ISC Verb Vocabulary", "Learn what -isc verbs mean · meanings only"], ["-IRE Verbs with -ISC", "Learn to conjugate them"],
       ["Mixed -ERE / -IRE Conjugation", "Choose the pattern first"]
     ] },
     { name: "Possessives", topics: [
@@ -129,13 +135,13 @@
   const TOPICS = TOPIC_GROUPS.flatMap((group) => group.topics.map(([topic]) => topic));
   const PRESETS = {
     family: ["Core Family Vocabulary", "Extended Family Vocabulary", "Family Relationships / Status", "Family Tree Practice"],
-    verbs: ["-ERE Verb Vocabulary", "Regular -ERE Verbs", "-IRE Verb Vocabulary", "Regular -IRE Verbs", "-IRE Verbs with -ISC", "Mixed -ERE / -IRE Conjugation"],
+    verbs: ["-ERE Verb Vocabulary", "Regular -ERE Verbs", "-IRE Verb Vocabulary", "Regular -IRE Verbs", "-IRE + -ISC Verb Vocabulary", "-IRE Verbs with -ISC", "Mixed -ERE / -IRE Conjugation"],
     possessives: ["Possessive Adjectives", "Possessives with Family Members", "Possessive Pronouns", "Possessives with DI", "Mixed Possessives"],
     priority: TOPICS.filter((topic) => topic !== "Culture & Recognition"),
     everything: [...TOPICS]
   };
-  const PRESET_LABELS = { family: "Family", verbs: "Verbs", possessives: "Possessives", priority: "Main 15", everything: "Everything" };
-  const MATCHING_CATEGORIES = ["Core Family Vocabulary", "Extended Family Vocabulary", "Family Relationships / Status", "-ERE Verb Vocabulary", "-IRE Verb Vocabulary", "Regular -ERE Verbs", "Regular -IRE Verbs", "-IRE Verbs with -ISC"];
+  const PRESET_LABELS = { family: "Family", verbs: "Verbs", possessives: "Possessives", priority: "Main 16", everything: "Everything" };
+  const MATCHING_CATEGORIES = ["Core Family Vocabulary", "Extended Family Vocabulary", "Family Relationships / Status", "-ERE Verb Vocabulary", "-IRE Verb Vocabulary", "-IRE + -ISC Verb Vocabulary", "Regular -ERE Verbs", "Regular -IRE Verbs", "-IRE Verbs with -ISC"];
 
   const POSSESSIVES = {
     mio: { ms: "il mio", mp: "i miei", fs: "la mia", fp: "le mie" },
@@ -145,18 +151,29 @@
     vostro: { ms: "il vostro", mp: "i vostri", fs: "la vostra", fp: "le vostre" },
     loro: { ms: "il loro", mp: "i loro", fs: "la loro", fp: "le loro" }
   };
+  const POSSESSIVE_KEY_ORDER = ["ms", "fs", "mp", "fp"];
+  const KEY_LABELS = { ms: "masculine singular", fs: "feminine singular", mp: "masculine plural", fp: "feminine plural" };
+  const OWNER_LABELS = { mio: "io", tuo: "tu", suo: "lui/lei", nostro: "noi", vostro: "voi", loro: "loro" };
+  const samePossessorForms = (possessor) => POSSESSIVE_KEY_ORDER.map((key) => POSSESSIVES[possessor][key]);
+  const withoutArticle = (value) => value.replace(/^(il|la|i|le)\s+/, "");
   const possessedNouns = [
     { id: "libro", noun: "libro", key: "ms" }, { id: "amici", noun: "amici", key: "mp" }, { id: "sedia", noun: "sedia", key: "fs" },
+    { id: "macchina", noun: "macchina", key: "fs" }, { id: "lezioni", noun: "lezioni", key: "fp" },
     { id: "automobili", noun: "automobili", key: "fp" }, { id: "mappa", noun: "mappa", key: "fs" }, { id: "lettere", noun: "lettere", key: "fp" },
     { id: "film", noun: "film", key: "ms" }, { id: "quaderni", noun: "quaderni", key: "mp" }, { id: "corsi", noun: "corsi", key: "mp" }
   ];
   const FAMILY_POSSESSIVE = [
-    { id: "my-father", prompt: "___ padre", answer: "mio", rule: "singular" }, { id: "my-mother", prompt: "___ madre", answer: "mia", rule: "singular" },
-    { id: "your-brother", prompt: "___ fratello", answer: "tuo", rule: "singular" }, { id: "his-sister", prompt: "___ sorella", answer: "sua", rule: "singular" },
-    { id: "my-parents", prompt: "___ genitori", answer: "i miei", rule: "plural" }, { id: "my-sisters", prompt: "___ sorelle", answer: "le mie", rule: "plural" },
-    { id: "your-parents", prompt: "___ genitori", answer: "i tuoi", rule: "plural" }, { id: "his-cousins", prompt: "___ cugini", answer: "i suoi", rule: "plural" },
-    { id: "my-younger-brother", prompt: "___ fratello minore", answer: "il mio", rule: "modified" },
-    { id: "their-nephew", prompt: "___ nipote", answer: "il loro", rule: "loro" }
+    { id: "my-father", noun: "padre", key: "ms", possessor: "mio", prompt: "___ padre (io)", answer: "mio", rule: "singular" },
+    { id: "my-mother", noun: "madre", key: "fs", possessor: "mio", prompt: "___ madre (io)", answer: "mia", rule: "singular" },
+    { id: "your-brother", noun: "fratello", key: "ms", possessor: "tuo", prompt: "___ fratello (tu)", answer: "tuo", rule: "singular" },
+    { id: "his-sister", noun: "sorella", key: "fs", possessor: "suo", prompt: "___ sorella (Marco)", answer: "sua", rule: "singular" },
+    { id: "my-parents", noun: "genitori", key: "mp", possessor: "mio", prompt: "___ genitori (io)", answer: "i miei", rule: "plural" },
+    { id: "my-sisters", noun: "sorelle", key: "fp", possessor: "mio", prompt: "___ sorelle (io)", answer: "le mie", rule: "plural" },
+    { id: "your-parents", noun: "genitori", key: "mp", possessor: "tuo", prompt: "___ genitori (tu)", answer: "i tuoi", rule: "plural" },
+    { id: "his-cousins", noun: "cugini", key: "mp", possessor: "suo", prompt: "___ cugini (Marco)", answer: "i suoi", rule: "plural" },
+    { id: "my-younger-brother", noun: "fratello minore", key: "ms", possessor: "mio", prompt: "___ fratello minore (io)", answer: "il mio", rule: "modified" },
+    { id: "their-nephew", noun: "nipote", key: "ms", possessor: "loro", prompt: "___ nipote (loro)", answer: "il loro", rule: "loro" },
+    { id: "their-sisters", noun: "sorelle", key: "fp", possessor: "loro", prompt: "___ sorelle (loro)", answer: "le loro", rule: "plural" }
   ];
   const RELATION_CONTEXTS = [
     ["cognata", "Maria è la moglie di mio fratello. Lei è mia ___.", "cognata"], ["suocero", "Il padre di mia moglie è mio ___.", "suocero"],
@@ -247,14 +264,22 @@
   }
 
   function verbVocabularyQuestion(category, sourceId, direction) {
-    const pool = category === "-ERE Verb Vocabulary" ? ERE : IRE;
+    const pool = category === "-ERE Verb Vocabulary" ? ERE : category === "-IRE + -ISC Verb Vocabulary" ? ISC : IRE;
     const item = choose(pool, sourceId);
     const toEnglish = directionToEnglish(direction);
     const answer = toEnglish ? item.english : item.infinitive;
+    const iscLookalikes = {
+      finire: ["sentire", "partire", "capire"], capire: ["finire", "aprire", "partire"],
+      preferire: ["servire", "offrire", "finire"], pulire: ["finire", "partire", "capire"],
+      restituire: ["servire", "seguire", "sentire"], spedire: ["spendere", "partire", "servire"]
+    };
+    const distractorPool = category === "-IRE + -ISC Verb Vocabulary"
+      ? (iscLookalikes[item.id] || []).map((id) => VERBS.find((entry) => entry.id === id)).filter(Boolean)
+      : pool.filter((candidate) => candidate.id !== item.id);
     const question = baseQuestion(category, item.id, `u3-verb-vocab:${item.id}:${toEnglish ? "en" : "it"}`,
       toEnglish ? "Translate the infinitive into English" : "Give the Italian infinitive",
       toEnglish ? item.infinitive : item.english, answer, `${item.infinitive} means “${item.english}.” This topic tests meaning only.`,
-      pool.filter((candidate) => candidate.id !== item.id).map((candidate) => toEnglish ? candidate.english : candidate.infinitive),
+      distractorPool.map((candidate) => toEnglish ? candidate.english : candidate.infinitive),
       toEnglish ? splitMeanings(item.english) : [item.infinitive]);
     question.isVocabularyTranslation = true;
     question.translationDirection = toEnglish ? "it-en" : "en-it";
@@ -284,31 +309,40 @@
     const noun = possessedNouns.find((item) => item.id === sourceId?.split(":")[1]) || random(possessedNouns);
     const answer = POSSESSIVES[possessor][noun.key];
     return baseQuestion("Possessive Adjectives", `${possessor}:${noun.id}`, `u3-poss-adj:${possessor}:${noun.id}`,
-      "Choose the possessive that agrees with the thing possessed", `___ ${noun.noun} (${possessor})`, answer,
-      `The possessive agrees with ${noun.noun} (${noun.key}), not with the owner: ${answer} ${noun.noun}.`,
-      Object.values(POSSESSIVES).flatMap((chart) => Object.values(chart)).filter((value) => value !== answer));
+      "Choose the possessive that agrees with the thing possessed", `___ ${noun.noun} (${OWNER_LABELS[possessor]})`, answer,
+      `“${OWNER_LABELS[possessor]}” tells you WHO owns it, but the article and ending agree with WHAT is owned. ${noun.noun} = ${KEY_LABELS[noun.key]}. Therefore: ${answer} ${noun.noun}.`,
+      samePossessorForms(possessor).filter((value) => value !== answer));
   }
 
   function familyPossessiveQuestion(sourceId) {
     const item = choose(FAMILY_POSSESSIVE, sourceId);
-    const explanation = item.rule === "singular" ? "A singular, unmodified family member normally omits the definite article."
-      : item.rule === "plural" ? "Plural family members use the definite article."
-      : item.rule === "loro" ? "With loro, the definite article is kept." : "A modified family member keeps the article in this course pattern.";
+    const fullForms = samePossessorForms(item.possessor);
+    const genderMateKey = item.key.startsWith("m") ? item.key.replace("m", "f") : item.key.replace("f", "m");
+    const distractors = item.rule === "singular"
+      ? [withoutArticle(POSSESSIVES[item.possessor][genderMateKey]), POSSESSIVES[item.possessor][item.key], POSSESSIVES[item.possessor][genderMateKey]]
+      : fullForms.filter((value) => value !== item.answer);
+    const explanation = item.rule === "singular"
+      ? `${item.noun} = ${KEY_LABELS[item.key]}, so use ${item.answer}. Because it is one unmodified family member, omit the definite article: ${item.answer} ${item.noun}.`
+      : item.rule === "plural"
+        ? `${item.noun} = ${KEY_LABELS[item.key]}. Plural family members keep the definite article, so use ${item.answer} ${item.noun}.`
+        : item.rule === "loro"
+          ? `${item.noun} = ${KEY_LABELS[item.key]}. With loro, keep the definite article: ${item.answer} ${item.noun}.`
+          : `${item.noun} is modified, so it keeps the definite article: ${item.answer} ${item.noun}.`;
     return baseQuestion("Possessives with Family Members", item.id, `u3-family-poss:${item.id}`, "Complete the family possessive: article or no article?",
-      item.prompt, item.answer, explanation, FAMILY_POSSESSIVE.filter((entry) => entry.id !== item.id).map((entry) => entry.answer));
+      item.prompt, item.answer, explanation, distractors);
   }
 
   function possessivePronounQuestion(sourceId) {
     const prompts = [
-      ["our-invitation", "Tutti hanno un invito. Quando arriva ___?", "il nostro", "invito is masculine singular"],
-      ["formal-map", "Ecco la mia mappa. Signora, dov'è ___?", "la sua", "mappa is feminine singular"],
-      ["their-book", "Io ho il mio libro. Antonio e Isabella hanno ___.", "il loro", "libro is masculine singular"],
-      ["my-letters", "Queste non sono le tue lettere. Sono ___!", "le mie", "lettere is feminine plural"]
-    ].map(([id, prompt, answer, reason]) => ({ id: `pronoun-${id}`, prompt, answer, reason }));
+      ["our-invitation", "Tutti hanno un invito. Quando arriva ___?", "nostro", "ms", "invito is masculine singular"],
+      ["formal-map", "Ecco la mia mappa. Signora, dov'è ___?", "suo", "fs", "mappa is feminine singular"],
+      ["their-book", "Io ho il mio libro. Antonio e Isabella hanno ___.", "loro", "ms", "libro is masculine singular"],
+      ["my-letters", "Queste non sono le tue lettere. Sono ___!", "mio", "fp", "lettere is feminine plural"]
+    ].map(([id, prompt, possessor, key, reason]) => ({ id: `pronoun-${id}`, prompt, possessor, key, reason, answer: POSSESSIVES[possessor][key] }));
     const item = choose(prompts, sourceId);
     return baseQuestion("Possessive Pronouns", item.id, `u3-${item.id}`, "Replace the omitted noun with a possessive pronoun", item.prompt, item.answer,
       `The noun is omitted, but its gender and number remain: ${item.reason}, so use ${item.answer}.`,
-      Object.values(POSSESSIVES).flatMap((chart) => Object.values(chart)).filter((value) => value !== item.answer));
+      samePossessorForms(item.possessor).filter((value) => value !== item.answer));
   }
 
   function possessiveDiQuestion(sourceId) {
@@ -351,7 +385,7 @@
     if (["Core Family Vocabulary", "Extended Family Vocabulary"].includes(category)) return vocabularyQuestion(category, sourceId, vocabularyDirection);
     if (category === "Family Relationships / Status") return relationshipQuestion(sourceId);
     if (category === "Family Tree Practice") return familyTreeQuestion(sourceId);
-    if (["-ERE Verb Vocabulary", "-IRE Verb Vocabulary"].includes(category)) return verbVocabularyQuestion(category, sourceId, vocabularyDirection);
+    if (["-ERE Verb Vocabulary", "-IRE Verb Vocabulary", "-IRE + -ISC Verb Vocabulary"].includes(category)) return verbVocabularyQuestion(category, sourceId, vocabularyDirection);
     if (["Regular -ERE Verbs", "Regular -IRE Verbs", "-IRE Verbs with -ISC", "Mixed -ERE / -IRE Conjugation"].includes(category)) return conjugationQuestion(category, sourceId);
     if (category === "Possessive Adjectives") return possessiveAdjectiveQuestion(sourceId);
     if (category === "Possessives with Family Members") return familyPossessiveQuestion(sourceId);
@@ -375,7 +409,8 @@
   const LEARN_CARDS = {
     "Regular -ERE Verbs": { title: "Regular -ERE", rule: "Remove -ere and add the ending that matches the subject.", chart: [["io", "-o · vivo"], ["tu", "-i · vivi"], ["lui/lei/Lei", "-e · vive"], ["noi", "-iamo · viviamo"], ["voi", "-ete · vivete"], ["loro", "-ono · vivono"]], examples: ["Io vivo a Venezia.", "Loro leggono molti libri.", "Noi scriviamo una lettera."], mistake: "Do not use the infinitive ending after the subject: noi viviamo, not noi vivere.", tryOne: "Voi ___ a Roma. (vivere)", tryAnswer: "vivete" },
     "Regular -IRE Verbs": { title: "Regular -IRE", rule: "Remove -ire and add -o, -i, -e, -iamo, -ite, -ono. Only the VOI ending differs from -ERE.", chart: [["io", "-o · parto"], ["tu", "-i · parti"], ["lui/lei/Lei", "-e · parte"], ["noi", "-iamo · partiamo"], ["voi", "-ite · partite"], ["loro", "-ono · partono"]], examples: ["A che ora parte il treno?", "Noi offriamo il caffè.", "Voi aprite i libri."], mistake: "Use voi partite, not partete. -IRE uses -ite for VOI.", tryOne: "Loro ___ alle otto. (partire)", tryAnswer: "partono" },
-    "-IRE Verbs with -ISC": { title: "-IRE Verbs with -ISC", rule: "Add -isc- with IO, TU, LUI/LEI/LEI FORMAL, and LORO. Do not add it with NOI or VOI.", chart: [["io ✓", "finisco"], ["tu ✓", "finisci"], ["lui/lei ✓", "finisce"], ["noi ✗", "finiamo"], ["voi ✗", "finite"], ["loro ✓", "finiscono"]], examples: ["Io capisco.", "Noi capiamo.", "Loro preferiscono la storia."], mistake: "❌ noi finisciamo  ✓ noi finiamo", tryOne: "Loro ___ alle sei. (finire)", tryAnswer: "finiscono" },
+    "-IRE + -ISC Verb Vocabulary": { title: "-IRE + -ISC Verb Vocabulary", rule: "Learn what these six verbs mean first. These are -IRE verbs that use the -isc pattern when conjugated.", chart: [["finire", "to finish"], ["capire", "to understand"], ["preferire", "to prefer"], ["pulire", "to clean"], ["restituire", "to return / give back"], ["spedire", "to send"]], examples: ["finire → to finish", "to understand → capire", "spedire → to send"], mistake: "Do not conjugate here—the default vocabulary topic tests infinitive meanings only.", tryOne: "to clean →", tryAnswer: "pulire", action: { label: "Practice conjugations →", topic: "-IRE Verbs with -ISC" } },
+    "-IRE Verbs with -ISC": { title: "-IRE Verbs with -ISC", rule: "Add -isc- with IO, TU, LUI/LEI/LEI FORMAL, and LORO. Do not add it with NOI or VOI.", chart: [["io ✓", "finisco"], ["tu ✓", "finisci"], ["lui/lei ✓", "finisce"], ["noi ✗", "finiamo"], ["voi ✗", "finite"], ["loro ✓", "finiscono"]], examples: ["Io capisco.", "Noi capiamo.", "Loro preferiscono la storia."], mistake: "❌ noi finisciamo  ✓ noi finiamo", tryOne: "Loro ___ alle sei. (finire)", tryAnswer: "finiscono", action: { label: "Review meanings →", topic: "-IRE + -ISC Verb Vocabulary" } },
     "Possessive Adjectives": { title: "Possessive Adjectives", rule: "The possessive agrees with the THING POSSESSED, not the owner.", chart: [["my", "il mio · la mia · i miei · le mie"], ["your", "il tuo · la tua · i tuoi · le tue"], ["his/her", "il suo · la sua · i suoi · le sue"], ["our", "il nostro · la nostra · i nostri · le nostre"], ["your plural", "il vostro · la vostra · i vostri · le vostre"], ["their", "il loro · la loro · i loro · le loro"]], examples: ["Marco: il suo libro", "Marco: la sua sedia", "Marco: le sue automobili"], mistake: "The owner's gender does not choose mio/mia or suo/sua; the possessed noun does.", tryOne: "Marco ha una sedia: ___ sedia", tryAnswer: "la sua" },
     "Possessives with Family Members": { title: "Possessives with Family", rule: "One singular, unmodified family member normally omits the article. Plural, modified, and loro family phrases keep it.", chart: [["singular", "mio padre · mia madre"], ["plural", "i miei genitori · le mie sorelle"], ["modified", "il mio fratello minore"], ["loro", "il loro nipote"]], examples: ["mia sorella", "i tuoi genitori", "il mio fratello minore", "il loro nipote"], mistake: "Do not remove the article from every family phrase. Check number, modifiers, and loro.", tryOne: "___ genitori stanno bene. (my)", tryAnswer: "i miei" },
     "Possessive Pronouns": { title: "Possessive Pronouns", rule: "A possessive adjective modifies a noun; a possessive pronoun replaces it. The omitted noun still controls gender and number.", chart: [["book", "il mio → mine"], ["map", "la mia → mine"], ["books", "i miei → mine"], ["letters", "le mie → mine"]], examples: ["Il mio libro è blu. Il tuo è rosso.", "Queste lettere sono le mie."], mistake: "Do not choose the form from the owner; use the omitted noun's gender and number.", tryOne: "La mia mappa è qui. Dov'è ___? (yours)", tryAnswer: "la tua" },
@@ -395,7 +430,7 @@
     possessives: POSSESSIVES, learnCards: LEARN_CARDS, familyTrees: FAMILY_TREES,
     vocabularyFilters: [["all", "All Unit 3"], ["family-core", "Family — Core"], ["family-extended", "Family — Extended"],
       ["family-relationships", "Family — Relationships"], ["ere", "-ERE Verbs"], ["ire-regular", "Regular -IRE Verbs"],
-      ["ire-isc", "-ISC Verbs"], ["possessives", "Possessives"]],
+      ["ire-isc", "-IRE + -ISC Verbs"], ["possessives", "Possessives"]],
     expandTopics(topics) { return [...new Set(topics)].filter((topic) => CATEGORIES.includes(topic)); },
     migrateTopics(topics) { return [...new Set(topics)].filter((topic) => TOPICS.includes(topic)); },
     makeQuestion, makeMatchingQuestion,

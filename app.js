@@ -93,7 +93,7 @@
   const escapeHtml = (value) => String(value).replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[char]));
 
   function emptyProgress() {
-    return { date: todayKey(), today: { answered: 0, correct: 0, almost: 0 }, categories: {}, items: {}, mistakes: {}, reviewQueue: [] };
+    return { date: todayKey(), today: { answered: 0, correct: 0, almost: 0 }, categories: {}, items: {}, mistakes: {}, reviewQueue: [], skills: {} };
   }
 
   function loadJSON(key, fallback) {
@@ -133,6 +133,7 @@
     clean.items ||= {};
     clean.mistakes ||= {};
     clean.reviewQueue ||= [];
+    clean.skills ||= {};
     return clean;
   }
 
@@ -321,7 +322,9 @@
       const learning = itemStats.filter((item) => item.attempts > 0 && !(item.attempts >= 2 && (item.correct / item.attempts) >= 0.8)).length;
       const streak = progress.currentStreak || 0;
       const mistakeCount = Object.keys(progress.mistakes).length;
-      unit3Extra.innerHTML = `<article><strong>${streak}</strong><small>Current streak</small></article><article><strong>${mastered}</strong><small>Terms mastered</small></article><article><strong>${learning}</strong><small>Terms learning</small></article><article><strong>${mistakeCount}</strong><small>Mistakes</small></article>`;
+      const iscVocabulary = accuracy(progress.skills.iscVocabularyAccuracy);
+      const iscConjugation = accuracy(progress.skills.iscConjugationAccuracy);
+      unit3Extra.innerHTML = `<article><strong>${streak}</strong><small>Current streak</small></article><article><strong>${mastered}</strong><small>Terms mastered</small></article><article><strong>${learning}</strong><small>Terms learning</small></article><article><strong>${mistakeCount}</strong><small>Mistakes</small></article><article><strong>${iscVocabulary === null ? "—" : `${iscVocabulary}%`}</strong><small>-ISC meanings</small></article><article><strong>${iscConjugation === null ? "—" : `${iscConjugation}%`}</strong><small>-ISC conjugation</small></article>`;
     }
 
     const mistakes = Object.values(progress.mistakes).reduce((total, item) => total + Math.max(1, item.misses || 1), 0);
@@ -612,7 +615,7 @@
     learnCardKey = UNIT3.learnCards[key] ? key : Object.keys(UNIT3.learnCards)[0];
     const card = UNIT3.learnCards[learnCardKey];
     $("#learn-tabs").innerHTML = Object.keys(UNIT3.learnCards).map((name) => `<button type="button" class="preset-button ${name === learnCardKey ? "selected" : ""}" data-learn-card="${escapeHtml(name)}">${escapeHtml(name)}</button>`).join("");
-    $("#learn-card").innerHTML = `<p class="eyebrow">Rule</p><h2>${escapeHtml(card.title)}</h2><p class="learn-rule">${escapeHtml(card.rule)}</p><div class="learn-chart">${card.chart.map(([label, value]) => `<div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(value)}</span></div>`).join("")}</div><section><h3>Examples</h3><ul>${card.examples.map((example) => `<li>${escapeHtml(example)}</li>`).join("")}</ul></section><aside class="learn-mistake"><strong>Common mistake</strong><span>${escapeHtml(card.mistake)}</span></aside><section class="learn-try"><h3>Try one</h3><p>${escapeHtml(card.tryOne)}</p><div><input id="learn-try-answer" class="typed-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type your answer…"><button id="check-learn-answer" class="primary-button" type="button">Check</button></div><div id="learn-try-feedback" class="feedback hidden" role="status"></div></section>`;
+    $("#learn-card").innerHTML = `<p class="eyebrow">Rule</p><h2>${escapeHtml(card.title)}</h2><p class="learn-rule">${escapeHtml(card.rule)}</p><div class="learn-chart">${card.chart.map(([label, value]) => `<div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(value)}</span></div>`).join("")}</div><section><h3>Examples</h3><ul>${card.examples.map((example) => `<li>${escapeHtml(example)}</li>`).join("")}</ul></section><aside class="learn-mistake"><strong>Common mistake</strong><span>${escapeHtml(card.mistake)}</span></aside><section class="learn-try"><h3>Try one</h3><p>${escapeHtml(card.tryOne)}</p><div><input id="learn-try-answer" class="typed-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type your answer…"><button id="check-learn-answer" class="primary-button" type="button">Check</button></div><div id="learn-try-feedback" class="feedback hidden" role="status"></div></section>${card.action ? `<div class="learn-related"><span>Ready for the related skill?</span><button id="learn-related-action" class="secondary-button" type="button">${escapeHtml(card.action.label)}</button></div>` : ""}`;
     $("#check-learn-answer").addEventListener("click", () => {
       const input = $("#learn-try-answer");
       if (!input.value.trim()) return input.focus();
@@ -620,6 +623,11 @@
       const feedback = $("#learn-try-feedback");
       feedback.className = `feedback ${correct ? "correct" : "incorrect"}`;
       feedback.innerHTML = correct ? `<strong>✓ Correct</strong><span>${escapeHtml(card.tryAnswer)}</span>` : `<strong>Not yet</strong><span>Correct answer: ${escapeHtml(card.tryAnswer)}</span>`;
+    });
+    $("#learn-related-action")?.addEventListener("click", () => {
+      setTopics([card.action.topic]);
+      selectMethod("mixed");
+      startSession("mixed");
     });
   }
 
@@ -791,7 +799,7 @@
     const hasVocabularyTranslations = selectedCategories.some((category) => category === "Vocabulary" || [
       "Personality Adjectives", "Physical Appearance", "Colors", "Nationalities", "School Subjects", "Classroom Objects",
       "Avere Expressions", "Days / Agenda Vocabulary", "Core Family Vocabulary", "Extended Family Vocabulary",
-      "Family Relationships / Status", "-ERE Verb Vocabulary", "-IRE Verb Vocabulary"
+      "Family Relationships / Status", "-ERE Verb Vocabulary", "-IRE Verb Vocabulary", "-IRE + -ISC Verb Vocabulary"
     ].includes(category) || category.startsWith("Verb Vocabulary"));
     $("#session-direction-wrap").classList.toggle("hidden", !hasVocabularyTranslations);
     $("#session-direction").textContent = directionLabels[session.vocabularyDirection];
@@ -1406,6 +1414,13 @@
     categoryStats.answered += 1;
     if (exact) categoryStats.correct += 1;
     progress.categories[q.category] = categoryStats;
+    if (activeUnit === "unit3" && ["-IRE + -ISC Verb Vocabulary", "-IRE Verbs with -ISC"].includes(q.category)) {
+      const skillKey = q.category === "-IRE + -ISC Verb Vocabulary" ? "iscVocabularyAccuracy" : "iscConjugationAccuracy";
+      const skill = progress.skills[skillKey] || { answered: 0, correct: 0 };
+      skill.answered += 1;
+      if (exact) skill.correct += 1;
+      progress.skills[skillKey] = skill;
+    }
     const key = `${q.category}|${q.sourceId}`;
     const item = progress.items[key] || { attempts: 0, correct: 0, misses: 0, streak: 0 };
     item.attempts += 1;
