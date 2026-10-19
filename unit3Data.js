@@ -102,18 +102,80 @@
   ];
   const VERBS = [...ERE, ...IRE, ...ISC];
 
+  const house = (id, italian, english, group, article, options = {}) => ({
+    id: `house-${id}`, italian, english, article, groups: [group, "house"], tag: options.tag || "House",
+    acceptedItalian: [...new Set([italian, ...(options.acceptedItalian || [])])],
+    acceptedEnglish: [...new Set([english, ...(options.acceptedEnglish || [])])],
+    typicalRoom: options.typicalRoom || "", priority: options.priority || "core"
+  });
+  const HOUSE_ROOMS = [
+    house("bathroom", "il bagno", "bathroom", "house-rooms", "il"),
+    house("bedroom", "la camera da letto", "bedroom", "house-rooms", "la"),
+    house("kitchen", "la cucina", "kitchen", "house-rooms", "la"),
+    house("living-room-soggiorno", "il soggiorno", "living room", "house-rooms", "il", { acceptedItalian: ["il salotto", "soggiorno", "salotto"] }),
+    house("living-room-salotto", "il salotto", "living room", "house-rooms", "il", { acceptedItalian: ["il soggiorno", "salotto", "soggiorno"] }),
+    house("garage", "il box / il garage", "garage", "house-rooms", "il", { acceptedItalian: ["il box", "il garage", "box", "garage"] }),
+    house("study", "lo studio", "study / home office", "house-rooms", "lo", { acceptedEnglish: ["study", "home office"] }),
+    house("garden", "il giardino", "garden / yard", "house-rooms", "il", { acceptedEnglish: ["garden", "yard"] }),
+    house("ground-floor", "il pianterreno", "ground floor", "house-rooms", "il"),
+    house("first-floor", "il primo piano", "first floor in Italian usage / US second floor", "house-rooms", "il", { acceptedEnglish: ["first floor", "US second floor", "second floor"] })
+  ];
+  const HOUSE_FURNITURE = [
+    house("bathtub", "la vasca da bagno", "bathtub", "house-furniture", "la", { typicalRoom: "il bagno" }),
+    house("double-bed", "il letto matrimoniale", "double bed / matrimonial bed", "house-furniture", "il", { acceptedEnglish: ["double bed", "matrimonial bed"], typicalRoom: "la camera da letto" }),
+    house("wardrobe", "l’armadio", "wardrobe / closet", "house-furniture", "l'", { acceptedItalian: ["l'armadio", "armadio"], acceptedEnglish: ["wardrobe", "closet"], typicalRoom: "la camera da letto" }),
+    house("sink", "il lavandino", "sink", "house-furniture", "il", { typicalRoom: "il bagno" }),
+    house("sofa", "il divano", "sofa / couch", "house-furniture", "il", { acceptedEnglish: ["sofa", "couch"], typicalRoom: "il soggiorno / il salotto" }),
+    house("armchair", "la poltrona", "armchair", "house-furniture", "la", { typicalRoom: "il soggiorno / il salotto" }),
+    house("desk", "la scrivania", "desk", "house-furniture", "la", { typicalRoom: "lo studio" }),
+    house("table", "il tavolo", "table", "house-furniture", "il", { typicalRoom: "la cucina" }),
+    house("chairs", "le sedie", "chairs", "house-furniture", "le", { typicalRoom: "la cucina" }),
+    house("refrigerator", "il frigorifero", "refrigerator / fridge", "house-furniture", "il", { acceptedEnglish: ["refrigerator", "fridge"], typicalRoom: "la cucina" })
+  ];
+  const HOUSE_OTHER = [
+    house("apartment", "un appartamento", "an apartment", "house-other", "un", { acceptedEnglish: ["apartment"], priority: "context" }),
+    house("building", "un palazzo", "apartment building / building", "house-other", "un", { acceptedEnglish: ["apartment building", "building"], priority: "context" }),
+    house("villa", "una villa monofamiliare", "single-family house / villa", "house-other", "una", { acceptedEnglish: ["single-family house", "villa"], priority: "context" }),
+    house("city-center", "il centro città", "city center", "house-other", "il", { priority: "context" }),
+    house("outskirts", "la periferia", "outskirts / suburbs", "house-other", "la", { acceptedEnglish: ["outskirts", "suburbs"], priority: "context" }),
+    house("historic-center", "il centro storico", "historic center", "house-other", "il", { priority: "context" }),
+    house("village", "un villaggio", "village", "house-other", "un", { priority: "context" })
+  ];
+  const HOUSE = [...HOUSE_ROOMS, ...HOUSE_FURNITURE, ...HOUSE_OTHER];
+
+  const BASE_PREPOSITIONS = ["a", "da", "di", "in", "su"];
+  const ARTICLES = ["il", "lo", "l'", "la", "i", "gli", "le"];
+  const ARTICULATED_PREPOSITIONS = {
+    a: { il: "al", lo: "allo", "l'": "all'", la: "alla", i: "ai", gli: "agli", le: "alle" },
+    da: { il: "dal", lo: "dallo", "l'": "dall'", la: "dalla", i: "dai", gli: "dagli", le: "dalle" },
+    di: { il: "del", lo: "dello", "l'": "dell'", la: "della", i: "dei", gli: "degli", le: "delle" },
+    in: { il: "nel", lo: "nello", "l'": "nell'", la: "nella", i: "nei", gli: "negli", le: "nelle" },
+    su: { il: "sul", lo: "sullo", "l'": "sull'", la: "sulla", i: "sui", gli: "sugli", le: "sulle" }
+  };
+  const PREPOSITION_FORMS = BASE_PREPOSITIONS.flatMap((preposition) => ARTICLES.map((article) => ({
+    id: `prep-${preposition}-${article.replace("'", "apostrophe")}`, preposition, article,
+    components: `${preposition} + ${article}`, combined: ARTICULATED_PREPOSITIONS[preposition][article],
+    italian: `${preposition} + ${article}`, english: ARTICULATED_PREPOSITIONS[preposition][article],
+    groups: ["articulated-prepositions", `prep-${preposition}`], tag: "Articulated Preposition", prepositionForm: true
+  })));
+
   const CATEGORY_POOLS = {
     "Core Family Vocabulary": FAMILY_CORE,
     "Extended Family Vocabulary": FAMILY_EXTENDED,
     "Family Relationships / Status": FAMILY_RELATIONSHIPS,
     "-ERE Verb Vocabulary": ERE,
     "-IRE Verb Vocabulary": IRE,
-    "-IRE + -ISC Verb Vocabulary": ISC
+    "-IRE + -ISC Verb Vocabulary": ISC,
+    "House — Rooms": HOUSE_ROOMS,
+    "House — Furniture": HOUSE_FURNITURE,
+    "House — Other": HOUSE_OTHER
   };
   const CATEGORIES = [
     "Core Family Vocabulary", "Extended Family Vocabulary", "Family Relationships / Status", "Family Tree Practice",
     "-ERE Verb Vocabulary", "Regular -ERE Verbs", "-IRE Verb Vocabulary", "Regular -IRE Verbs", "-IRE + -ISC Verb Vocabulary", "-IRE Verbs with -ISC", "Mixed -ERE / -IRE Conjugation",
-    "Possessive Adjectives", "Possessives with Family Members", "Possessive Pronouns", "Possessives with DI", "Mixed Possessives", "Culture & Recognition"
+    "Possessive Adjectives", "Possessives with Family Members", "Possessive Pronouns", "Possessives with DI", "Mixed Possessives",
+    "House — Rooms", "House — Furniture", "House — Other", "In Which Room?",
+    "Articulated Preposition Forms", "Articulated Prepositions in Sentences", "Article Recognition", "Culture & Recognition"
   ];
   const TOPIC_GROUPS = [
     { name: "Vocabulary", topics: [
@@ -128,7 +190,16 @@
     ] },
     { name: "Possessives", topics: [
       ["Possessive Adjectives", "Agreement with the thing possessed"], ["Possessives with Family Members", "Article or no article?"],
-      ["Possessive Pronouns", "Replace the noun"], ["Possessives with DI", "Di chi è? / Di chi sono?"], ["Mixed Possessives", "Course-style mixed challenge"]
+      ["Possessive Pronouns", "Replace the noun"], ["Mixed Possessives", "Course-style mixed challenge"]
+    ] },
+    { name: "House", topics: [
+      ["House Vocabulary", "All rooms, furniture, and house locations"], ["Rooms of the House", "Rooms, floors, and garden"],
+      ["Furniture", "La casa e l’arredamento"], ["In Which Room?", "Connect furniture to its typical room"]
+    ] },
+    { name: "Prepositions", topics: [
+      ["Articulated Preposition Forms", "★ Memorize all 35 combinations"],
+      ["Articulated Prepositions in Sentences", "★ Choose the form in context"],
+      ["Article Recognition", "Identify the noun’s article first"], ["Possessives with DI", "Di chi è? / Di chi sono?"]
     ] },
     { name: "Optional course context", topics: [["Culture & Recognition", "Veneto, Venice, and Pane e Tulipani"]] }
   ];
@@ -137,11 +208,18 @@
     family: ["Core Family Vocabulary", "Extended Family Vocabulary", "Family Relationships / Status", "Family Tree Practice"],
     verbs: ["-ERE Verb Vocabulary", "Regular -ERE Verbs", "-IRE Verb Vocabulary", "Regular -IRE Verbs", "-IRE + -ISC Verb Vocabulary", "-IRE Verbs with -ISC", "Mixed -ERE / -IRE Conjugation"],
     possessives: ["Possessive Adjectives", "Possessives with Family Members", "Possessive Pronouns", "Possessives with DI", "Mixed Possessives"],
+    house: ["House Vocabulary", "In Which Room?"],
+    prepositions: ["Articulated Preposition Forms", "Articulated Prepositions in Sentences", "Article Recognition", "Possessives with DI"],
     priority: TOPICS.filter((topic) => topic !== "Culture & Recognition"),
     everything: [...TOPICS]
   };
-  const PRESET_LABELS = { family: "Family", verbs: "Verbs", possessives: "Possessives", priority: "Main 16", everything: "Everything" };
-  const MATCHING_CATEGORIES = ["Core Family Vocabulary", "Extended Family Vocabulary", "Family Relationships / Status", "-ERE Verb Vocabulary", "-IRE Verb Vocabulary", "-IRE + -ISC Verb Vocabulary", "Regular -ERE Verbs", "Regular -IRE Verbs", "-IRE Verbs with -ISC"];
+  const PRESET_LABELS = { family: "Family", verbs: "Verbs", possessives: "Possessives", house: "House", prepositions: "Prepositions", priority: "Main topics", everything: "Everything" };
+  const MATCHING_CATEGORIES = ["Core Family Vocabulary", "Extended Family Vocabulary", "Family Relationships / Status", "-ERE Verb Vocabulary", "-IRE Verb Vocabulary", "-IRE + -ISC Verb Vocabulary", "Regular -ERE Verbs", "Regular -IRE Verbs", "-IRE Verbs with -ISC", "House — Rooms", "House — Furniture", "House — Other", "Articulated Preposition Forms"];
+  const TOPIC_CATEGORY_MAP = {
+    "House Vocabulary": ["House — Rooms", "House — Furniture", "House — Other"],
+    "Rooms of the House": ["House — Rooms"],
+    Furniture: ["House — Furniture"]
+  };
 
   const POSSESSIVES = {
     mio: { ms: "il mio", mp: "i miei", fs: "la mia", fp: "le mie" },
@@ -214,6 +292,38 @@
     ] }
   ];
 
+  const ROOM_CONTEXTS = [
+    ["refrigerator", "Dove trovi il frigorifero?", "la cucina", ["la cucina"]],
+    ["bathtub", "Dove trovi la vasca da bagno?", "il bagno", ["il bagno"]],
+    ["double-bed", "Dove trovi il letto matrimoniale?", "la camera da letto", ["la camera da letto"]],
+    ["sofa", "Dove trovi il divano?", "il soggiorno", ["il soggiorno", "il salotto"]],
+    ["desk", "Dove trovi la scrivania?", "lo studio", ["lo studio"]],
+    ["bathroom-context", "Nel bagno c’è ___.", "la vasca da bagno", ["la vasca da bagno"]],
+    ["kitchen-context", "Nella cucina c’è ___.", "il frigorifero", ["il frigorifero"]],
+    ["bedroom-context", "Nella camera da letto c’è ___.", "il letto matrimoniale", ["il letto matrimoniale"]],
+    ["living-context", "Nel soggiorno c’è ___.", "il divano", ["il divano"]]
+  ].map(([id, prompt, answer, accepted]) => ({ id: `room-${id}`, prompt, answer, accepted }));
+
+  const PREPOSITION_CONTEXTS = [
+    ["sofa-living", "Il divano è ___ soggiorno.", "in", "il", "soggiorno", "nel"],
+    ["fridge-kitchen", "Il frigorifero è ___ cucina.", "in", "la", "cucina", "nella"],
+    ["desk-study", "La scrivania è ___ studio.", "in", "lo", "studio", "nello"],
+    ["bed-bedroom", "Il letto è ___ camera da letto.", "in", "la", "camera da letto", "nella"],
+    ["clothes-wardrobe", "I vestiti sono ___ armadio.", "in", "l'", "armadio", "nell'"],
+    ["teacher", "Vado ___ professoressa.", "da", "la", "professoressa", "dalla", "person"],
+    ["dentist", "Quando ho male ai denti vado ___ dentista.", "da", "il", "dentista", "dal", "person"],
+    ["friends", "Ritorno ___ miei amici.", "da", "i", "miei amici", "dai", "person"],
+    ["maria", "Vado ___ Maria.", "da", null, "Maria", "da", "proper"],
+    ["kitchen-door", "Questa è la porta ___ cucina.", "di", "la", "cucina", "della", "possession"],
+    ["living-table", "Questo è il tavolo ___ soggiorno.", "di", "il", "soggiorno", "del", "possession"],
+    ["antonio-book", "Questo è il libro ___ Antonio.", "di", null, "Antonio", "di", "proper"]
+  ].map(([id, prompt, preposition, article, noun, answer, pattern = "house"]) => ({ id: `prep-context-${id}`, prompt, preposition, article, noun, answer, pattern }));
+
+  const ARTICLE_NOUNS = [
+    ["soggiorno", "il"], ["studio", "lo"], ["armadio", "l'"], ["cucina", "la"], ["sedie", "le"],
+    ["bagno", "il"], ["giardino", "il"], ["vasca da bagno", "la"], ["frigorifero", "il"], ["poltrona", "la"]
+  ].map(([noun, article]) => ({ id: `article-${noun.replaceAll(" ", "-")}`, noun, article }));
+
   function vocabularyQuestion(category, sourceId, direction) {
     const pool = CATEGORY_POOLS[category];
     const item = choose(pool, sourceId);
@@ -223,10 +333,59 @@
       toEnglish ? item.italian : item.english, toEnglish ? item.english : item.italian,
       `${item.italian} means “${item.english}.”${item.ambiguity ? ` ${item.ambiguity}` : ""}`,
       pool.filter((candidate) => candidate.id !== item.id).map((candidate) => toEnglish ? candidate.english : candidate.italian),
-      toEnglish ? splitMeanings(item.english) : item.acceptedItalian);
+      toEnglish ? [...new Set([...splitMeanings(item.english), ...(item.acceptedEnglish || [])])] : item.acceptedItalian);
     question.isVocabularyTranslation = true;
     question.translationDirection = toEnglish ? "it-en" : "en-it";
     return question;
+  }
+
+  function roomContextQuestion(sourceId) {
+    const item = choose(ROOM_CONTEXTS, sourceId);
+    const roomAnswers = ["il bagno", "la camera da letto", "la cucina", "il soggiorno", "il salotto", "lo studio"];
+    const furnitureAnswers = HOUSE_FURNITURE.map((entry) => entry.italian);
+    const answerPool = item.prompt.startsWith("Dove") ? roomAnswers : furnitureAnswers;
+    return baseQuestion("In Which Room?", item.id, `u3-${item.id}`, item.prompt.startsWith("Dove") ? "In quale stanza?" : "Complete the house sentence",
+      item.prompt, item.answer, `${item.answer} is the straightforward room association from this Unit 3 house vocabulary.`,
+      answerPool.filter((answer) => !item.accepted.includes(answer)), item.accepted);
+  }
+
+  function articulatedFormQuestion(sourceId) {
+    const [requestedId, forcedDirection] = String(sourceId || "").split("#");
+    const item = PREPOSITION_FORMS.find((entry) => entry.id === requestedId) || random(PREPOSITION_FORMS);
+    const componentsToForm = forcedDirection === "components" || (forcedDirection !== "reverse" && Math.random() < 0.5);
+    const answer = componentsToForm ? item.combined : item.components;
+    const sameArticle = PREPOSITION_FORMS.filter((entry) => entry.article === item.article && entry.id !== item.id);
+    const question = baseQuestion("Articulated Preposition Forms", item.id, `u3-prep-form:${item.id}:${componentsToForm ? "forward" : "reverse"}`,
+      componentsToForm ? "Combine the preposition and article" : "Break the articulated preposition into its components",
+      componentsToForm ? `${item.components} = ?` : `${item.combined} = ?`, answer,
+      `${item.preposition} + ${item.article} = ${item.combined}. This combination is tracked separately from the other 34 forms.`,
+      sameArticle.map((entry) => componentsToForm ? entry.combined : entry.components));
+    question.formDirection = componentsToForm ? "components" : "reverse";
+    question.reviewSourceId = `${item.id}#${componentsToForm ? "reverse" : "components"}`;
+    return question;
+  }
+
+  function articulatedContextQuestion(sourceId) {
+    const item = choose(PREPOSITION_CONTEXTS, sourceId);
+    const distractors = item.article
+      ? BASE_PREPOSITIONS.filter((base) => base !== item.preposition).map((base) => ARTICULATED_PREPOSITIONS[base][item.article])
+      : BASE_PREPOSITIONS.filter((base) => base !== item.preposition);
+    const articleLine = item.article ? `${item.noun} → ${item.article} ${item.noun}` : `${item.noun} is a proper name, so it has no article here`;
+    const combinationLine = item.article ? `${item.preposition} + ${item.article} = ${item.answer}` : `Use simple ${item.preposition} before the proper name`;
+    const question = baseQuestion("Articulated Prepositions in Sentences", item.id, `u3-${item.id}`, "Choose the preposition for the sentence",
+      item.prompt, item.answer, `${articleLine}. Base preposition = ${item.preposition}. ${combinationLine}. Therefore: ${item.answer} ${item.noun}.`, distractors);
+    question.basePreposition = item.preposition;
+    question.article = item.article;
+    question.contextPattern = item.pattern;
+    return question;
+  }
+
+  function articleRecognitionQuestion(sourceId) {
+    const item = choose(ARTICLE_NOUNS, sourceId);
+    const example = item.article.endsWith("'") ? `${item.article}${item.noun}` : `${item.article} ${item.noun}`;
+    return baseQuestion("Article Recognition", item.id, `u3-${item.id}`, "Which article?", `___ ${item.noun}`, item.article,
+      `${item.noun} takes ${item.article}: ${example}. Recognizing the article lets you build forms such as in + ${item.article}.`,
+      ARTICLES.filter((article) => article !== item.article));
   }
 
   function relationshipQuestion(sourceId) {
@@ -382,7 +541,7 @@
   }
 
   function makeQuestion(category, sourceId, unit1Data, vocabularyDirection = "mixed") {
-    if (["Core Family Vocabulary", "Extended Family Vocabulary"].includes(category)) return vocabularyQuestion(category, sourceId, vocabularyDirection);
+    if (["Core Family Vocabulary", "Extended Family Vocabulary", "House — Rooms", "House — Furniture", "House — Other"].includes(category)) return vocabularyQuestion(category, sourceId, vocabularyDirection);
     if (category === "Family Relationships / Status") return relationshipQuestion(sourceId);
     if (category === "Family Tree Practice") return familyTreeQuestion(sourceId);
     if (["-ERE Verb Vocabulary", "-IRE Verb Vocabulary", "-IRE + -ISC Verb Vocabulary"].includes(category)) return verbVocabularyQuestion(category, sourceId, vocabularyDirection);
@@ -392,12 +551,17 @@
     if (category === "Possessive Pronouns") return possessivePronounQuestion(sourceId);
     if (category === "Possessives with DI") return possessiveDiQuestion(sourceId);
     if (category === "Mixed Possessives") return mixedPossessiveQuestion(sourceId);
+    if (category === "In Which Room?") return roomContextQuestion(sourceId);
+    if (category === "Articulated Preposition Forms") return articulatedFormQuestion(sourceId);
+    if (category === "Articulated Prepositions in Sentences") return articulatedContextQuestion(sourceId);
+    if (category === "Article Recognition") return articleRecognitionQuestion(sourceId);
     return cultureQuestion(sourceId);
   }
 
   function makeMatchingQuestion(category) {
     let pairs;
-    if (CATEGORY_POOLS[category]) pairs = shuffle(CATEGORY_POOLS[category]).slice(0, 5).map((item) => ({ left: item.italian, right: item.english }));
+    if (category === "Articulated Preposition Forms") pairs = shuffle(PREPOSITION_FORMS).slice(0, 5).map((item) => ({ left: item.components, right: item.combined, sourceId: item.id }));
+    else if (CATEGORY_POOLS[category]) pairs = shuffle(CATEGORY_POOLS[category]).slice(0, 5).map((item) => ({ left: item.italian, right: item.english }));
     else {
       const pool = category === "Regular -ERE Verbs" ? ERE : category === "Regular -IRE Verbs" ? IRE : ISC;
       pairs = shuffle(pool).slice(0, 5).map((item) => ({ left: item.infinitive, right: item.english }));
@@ -416,9 +580,23 @@
     "Possessive Pronouns": { title: "Possessive Pronouns", rule: "A possessive adjective modifies a noun; a possessive pronoun replaces it. The omitted noun still controls gender and number.", chart: [["book", "il mio → mine"], ["map", "la mia → mine"], ["books", "i miei → mine"], ["letters", "le mie → mine"]], examples: ["Il mio libro è blu. Il tuo è rosso.", "Queste lettere sono le mie."], mistake: "Do not choose the form from the owner; use the omitted noun's gender and number.", tryOne: "La mia mappa è qui. Dov'è ___? (yours)", tryAnswer: "la tua" },
     "Possessives with DI": { title: "Possessives with DI", rule: "Use di for belonging. Ask Di chi è? for one thing and Di chi sono? for plural things.", chart: [["di + il", "del"], ["di + lo", "dello"], ["di + la", "della"], ["di + i", "dei"], ["di + gli", "degli"], ["di + le", "delle"]], examples: ["il libro di Antonio", "Di chi è l'agendina?", "Di chi sono i quaderni?"], mistake: "Use è with a singular object and sono with plural objects.", tryOne: "___ i quaderni?", tryAnswer: "Di chi sono" }
   };
+  LEARN_CARDS["Preposizioni articolate"] = {
+    title: "Preposizioni articolate",
+    rule: "Combine a, da, di, in, or su with the noun’s definite article. Learn the table first, then choose the base preposition in context.",
+    chart: BASE_PREPOSITIONS.map((preposition) => [
+      `${preposition.toUpperCase()} + ARTICLE`,
+      ARTICLES.map((article) => `${preposition} + ${article} = ${ARTICULATED_PREPOSITIONS[preposition][article]}`).join(" · ")
+    ]),
+    examples: ["di + il = del", "in + la = nella", "a + gli = agli", "da + l’ = dall’", "su + le = sulle"],
+    mistake: "First choose the base preposition and the noun’s article; then combine them. Do not build the form by simple string concatenation.",
+    tryOne: "in + gli =", tryAnswer: "negli",
+    action: { label: "Practice all 35 forms →", topic: "Articulated Preposition Forms" }
+  };
 
   const VOCABULARY = [
     ...FAMILY,
+    ...HOUSE,
+    ...PREPOSITION_FORMS,
     ...VERBS.map((item) => ({ ...item, italian: item.infinitive, groups: [item.conjugationType, "verbs"], verbType: item.conjugationType === "ere" ? "-ERE" : item.conjugationType === "ire-regular" ? "regular -IRE" : "-IRE + ISC" })),
     ...Object.entries(POSSESSIVES).map(([id, chart]) => ({ id: `possessive-${id}`, italian: Object.values(chart).join(" · "), english: `${id} possessive forms`, groups: ["possessives"], tag: "Possessives" }))
   ];
@@ -427,11 +605,15 @@
     id: "unit3", label: "Unit 3", categories: CATEGORIES, topics: TOPICS, defaultTopics: PRESETS.priority,
     topicGroups: TOPIC_GROUPS, presets: PRESETS, presetLabels: PRESET_LABELS, matchingCategories: MATCHING_CATEGORIES,
     vocabulary: VOCABULARY, family: FAMILY, verbs: VERBS, ereVerbs: ERE, ireVerbs: IRE, iscVerbs: ISC,
+    houseVocabulary: HOUSE, houseRooms: HOUSE_ROOMS, houseFurniture: HOUSE_FURNITURE, houseOther: HOUSE_OTHER,
+    basePrepositions: BASE_PREPOSITIONS, articles: ARTICLES, articulatedPrepositions: ARTICULATED_PREPOSITIONS, prepositionForms: PREPOSITION_FORMS,
     possessives: POSSESSIVES, learnCards: LEARN_CARDS, familyTrees: FAMILY_TREES,
     vocabularyFilters: [["all", "All Unit 3"], ["family-core", "Family — Core"], ["family-extended", "Family — Extended"],
       ["family-relationships", "Family — Relationships"], ["ere", "-ERE Verbs"], ["ire-regular", "Regular -IRE Verbs"],
-      ["ire-isc", "-IRE + -ISC Verbs"], ["possessives", "Possessives"]],
-    expandTopics(topics) { return [...new Set(topics)].filter((topic) => CATEGORIES.includes(topic)); },
+      ["ire-isc", "-IRE + -ISC Verbs"], ["possessives", "Possessives"], ["house-rooms", "House — Rooms"],
+      ["house-furniture", "House — Furniture"], ["house-other", "House — Other"], ["articulated-prepositions", "Articulated Preposition Forms"]],
+    prepositionVocabularyFilters: [["all", "All"], ...BASE_PREPOSITIONS.map((base) => [`prep-${base}`, base.toUpperCase()])],
+    expandTopics(topics) { return [...new Set(topics.flatMap((topic) => TOPIC_CATEGORY_MAP[topic] || [topic]))].filter((topic) => CATEGORIES.includes(topic)); },
     migrateTopics(topics) { return [...new Set(topics)].filter((topic) => TOPICS.includes(topic)); },
     makeQuestion, makeMatchingQuestion,
     isSourceEligible(category) { return CATEGORIES.includes(category); }

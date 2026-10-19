@@ -93,7 +93,7 @@
   const escapeHtml = (value) => String(value).replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[char]));
 
   function emptyProgress() {
-    return { date: todayKey(), today: { answered: 0, correct: 0, almost: 0 }, categories: {}, items: {}, mistakes: {}, reviewQueue: [], skills: {} };
+    return { date: todayKey(), today: { answered: 0, correct: 0, almost: 0 }, categories: {}, items: {}, mistakes: {}, reviewQueue: [], skills: {}, errorTypes: {} };
   }
 
   function loadJSON(key, fallback) {
@@ -134,6 +134,7 @@
     clean.mistakes ||= {};
     clean.reviewQueue ||= [];
     clean.skills ||= {};
+    clean.errorTypes ||= {};
     return clean;
   }
 
@@ -170,6 +171,7 @@
   let lastMinuteLastMissed = [];
   let lastPictureIds = [];
   let vocabularyFilter = "all";
+  let prepositionVocabularyFilter = "all";
   let learnCardKey = "Regular -ERE Verbs";
 
   function saveProgress() {
@@ -256,7 +258,7 @@
     $("#brand-unit-label").textContent = `${unitLabel} study lab`;
     $("#home-unit-label").textContent = unitLabel;
     $("#hero-copy").textContent = activeUnit === "unit3"
-      ? "Learn and practice family vocabulary, -ERE and -IRE verbs, -isc patterns, possessives, and family-tree reasoning."
+      ? "Learn and practice family and house vocabulary, -ERE and -IRE verbs, -isc patterns, possessives, articulated prepositions, and family-tree reasoning."
       : activeUnit === "unit2" ? "Focused Exam 2 and Unit 2 practice for course vocabulary, adjectives, avere, regular and irregular verbs, listening, and classroom usage."
         : "Fast, focused repetition for articles, gender, and plural forms—with your weak areas brought back at the right time.";
     $("#weak-areas-title").textContent = `${unitLabel} Weak Areas`;
@@ -287,6 +289,7 @@
     pictureSession = null;
     lastMinuteSession = null;
     vocabularyFilter = "all";
+    prepositionVocabularyFilter = "all";
     initSettings();
     renderHomeStats();
     showView("home");
@@ -324,7 +327,11 @@
       const mistakeCount = Object.keys(progress.mistakes).length;
       const iscVocabulary = accuracy(progress.skills.iscVocabularyAccuracy);
       const iscConjugation = accuracy(progress.skills.iscConjugationAccuracy);
-      unit3Extra.innerHTML = `<article><strong>${streak}</strong><small>Current streak</small></article><article><strong>${mastered}</strong><small>Terms mastered</small></article><article><strong>${learning}</strong><small>Terms learning</small></article><article><strong>${mistakeCount}</strong><small>Mistakes</small></article><article><strong>${iscVocabulary === null ? "—" : `${iscVocabulary}%`}</strong><small>-ISC meanings</small></article><article><strong>${iscConjugation === null ? "—" : `${iscConjugation}%`}</strong><small>-ISC conjugation</small></article>`;
+      const houseAccuracy = accuracy(progress.skills.houseVocabularyAccuracy);
+      const prepFormAccuracy = accuracy(progress.skills.articulatedPrepositionFormAccuracy);
+      const prepContextAccuracy = accuracy(progress.skills.articulatedPrepositionContextAccuracy);
+      const articleAccuracy = accuracy(progress.skills.articleRecognitionAccuracy);
+      unit3Extra.innerHTML = `<article><strong>${streak}</strong><small>Current streak</small></article><article><strong>${mastered}</strong><small>Terms mastered</small></article><article><strong>${learning}</strong><small>Terms learning</small></article><article><strong>${mistakeCount}</strong><small>Mistakes</small></article><article><strong>${iscVocabulary === null ? "—" : `${iscVocabulary}%`}</strong><small>-ISC meanings</small></article><article><strong>${iscConjugation === null ? "—" : `${iscConjugation}%`}</strong><small>-ISC conjugation</small></article><article><strong>${houseAccuracy === null ? "—" : `${houseAccuracy}%`}</strong><small>House vocabulary</small></article><article><strong>${prepFormAccuracy === null ? "—" : `${prepFormAccuracy}%`}</strong><small>Preposition forms</small></article><article><strong>${prepContextAccuracy === null ? "—" : `${prepContextAccuracy}%`}</strong><small>Prepositions in context</small></article><article><strong>${articleAccuracy === null ? "—" : `${articleAccuracy}%`}</strong><small>Article recognition</small></article><article><strong>${progress.errorTypes.combination_error || 0}</strong><small>Combination errors</small></article><article><strong>${progress.errorTypes.preposition_usage_error || 0}</strong><small>Usage errors</small></article>`;
     }
 
     const mistakes = Object.values(progress.mistakes).reduce((total, item) => total + Math.max(1, item.misses || 1), 0);
@@ -569,8 +576,13 @@
       const module = activeUnit === "unit3" ? UNIT3 : UNIT2;
       filters.innerHTML = module.vocabularyFilters.map(([value, label]) => `<button type="button" class="preset-button ${vocabularyFilter === value ? "selected" : ""}" data-vocabulary-filter="${value}">${escapeHtml(label)}</button>`).join("");
     } else filters.innerHTML = "";
+    const prepositionFilters = $("#preposition-vocabulary-filters");
+    const showPrepositionFilters = activeUnit === "unit3" && vocabularyFilter === "articulated-prepositions";
+    prepositionFilters.classList.toggle("hidden", !showPrepositionFilters);
+    prepositionFilters.innerHTML = showPrepositionFilters ? UNIT3.prepositionVocabularyFilters.map(([value, label]) => `<button type="button" class="preset-button ${prepositionVocabularyFilter === value ? "selected" : ""}" data-preposition-vocabulary-filter="${value}">${escapeHtml(label)}</button>`).join("") : "";
     const entries = vocabularyEntries()
       .filter((entry) => activeUnit === "unit1" || vocabularyFilter === "all" || entry.groups?.includes(vocabularyFilter))
+      .filter((entry) => !showPrepositionFilters || prepositionVocabularyFilter === "all" || entry.groups?.includes(prepositionVocabularyFilter))
       .filter((entry) => !query || normalize(entry.italian).includes(query) || normalize(entry.english).includes(query))
       .sort((a, b) => (sortBy === "english" ? a.english.localeCompare(b.english, "en") : a.italian.localeCompare(b.italian, "it-IT")));
     $("#vocabulary-count").textContent = `${entries.length} ${entries.length === 1 ? "entry" : "entries"}`;
@@ -580,7 +592,9 @@
       const isOpen = expanded === true || (expanded instanceof Set && expanded.has(key));
       const unique = (field) => [...new Set(variants.map((item) => item[field]))];
       let unit2Grammar = "";
-      if (activeUnit === "unit3" && entry.forms && entry.infinitive) {
+      if (activeUnit === "unit3" && entry.prepositionForm) {
+        unit2Grammar = `<div class="vocabulary-grammar"><div><small>Components</small><b>${escapeHtml(entry.components)}</b></div><div><small>Combined form</small><b>${escapeHtml(entry.combined)}</b></div><div><small>Base preposition</small><b>${escapeHtml(entry.preposition.toUpperCase())}</b></div></div>`;
+      } else if (activeUnit === "unit3" && entry.forms && entry.infinitive) {
         unit2Grammar = `<div class="vocabulary-grammar"><div><small>Verb type</small><b>${escapeHtml(entry.verbType || entry.conjugationType)}</b></div><div><small>Singular subjects</small><b>${escapeHtml(`io ${entry.forms.io} · tu ${entry.forms.tu} · lui/lei ${entry.forms["lui/lei/Lei"]}`)}</b></div><div><small>Plural subjects</small><b>${escapeHtml(`noi ${entry.forms.noi} · voi ${entry.forms.voi} · loro ${entry.forms.loro}`)}</b></div></div>`;
       } else if (activeUnit === "unit3" && entry.gender) {
         unit2Grammar = `<div class="vocabulary-grammar"><div><small>Gender</small><b>${escapeHtml(entry.gender)}</b></div><div><small>Base form</small><b>${escapeHtml(entry.base || entry.italian)}</b></div>${entry.ambiguity ? `<div><small>Context note</small><b>${escapeHtml(entry.ambiguity)}</b></div>` : ""}</div>`;
@@ -606,6 +620,7 @@
   function openVocabulary() {
     session = null;
     vocabularyFilter = "all";
+    prepositionVocabularyFilter = "all";
     $("#vocabulary-search").value = "";
     renderVocabulary(new Set());
     showView("vocabulary");
@@ -799,7 +814,8 @@
     const hasVocabularyTranslations = selectedCategories.some((category) => category === "Vocabulary" || [
       "Personality Adjectives", "Physical Appearance", "Colors", "Nationalities", "School Subjects", "Classroom Objects",
       "Avere Expressions", "Days / Agenda Vocabulary", "Core Family Vocabulary", "Extended Family Vocabulary",
-      "Family Relationships / Status", "-ERE Verb Vocabulary", "-IRE Verb Vocabulary", "-IRE + -ISC Verb Vocabulary"
+      "Family Relationships / Status", "-ERE Verb Vocabulary", "-IRE Verb Vocabulary", "-IRE + -ISC Verb Vocabulary",
+      "House — Rooms", "House — Furniture", "House — Other", "Articulated Preposition Forms"
     ].includes(category) || category.startsWith("Verb Vocabulary"));
     $("#session-direction-wrap").classList.toggle("hidden", !hasVocabularyTranslations);
     $("#session-direction").textContent = directionLabels[session.vocabularyDirection];
@@ -846,6 +862,7 @@
     const value = accuracy(stats);
     if (settings.emphasis === "weak" && value !== null) weight *= 1 + ((100 - value) / 35);
     if (activeUnit === "unit1" && CORE_CATEGORIES.includes(category)) weight *= 1.35;
+    if (activeUnit === "unit3" && category === "House — Other") weight *= 0.65;
     return weight;
   }
 
@@ -1414,12 +1431,25 @@
     categoryStats.answered += 1;
     if (exact) categoryStats.correct += 1;
     progress.categories[q.category] = categoryStats;
-    if (activeUnit === "unit3" && ["-IRE + -ISC Verb Vocabulary", "-IRE Verbs with -ISC"].includes(q.category)) {
-      const skillKey = q.category === "-IRE + -ISC Verb Vocabulary" ? "iscVocabularyAccuracy" : "iscConjugationAccuracy";
+    if (activeUnit === "unit3") {
+      const unit3SkillMap = {
+        "-IRE + -ISC Verb Vocabulary": "iscVocabularyAccuracy",
+        "-IRE Verbs with -ISC": "iscConjugationAccuracy",
+        "House — Rooms": "houseVocabularyAccuracy",
+        "House — Furniture": "houseVocabularyAccuracy",
+        "House — Other": "houseVocabularyAccuracy",
+        "In Which Room?": "houseVocabularyAccuracy",
+        "Articulated Preposition Forms": "articulatedPrepositionFormAccuracy",
+        "Articulated Prepositions in Sentences": "articulatedPrepositionContextAccuracy",
+        "Article Recognition": "articleRecognitionAccuracy"
+      };
+      const skillKey = unit3SkillMap[q.category];
+      if (skillKey) {
       const skill = progress.skills[skillKey] || { answered: 0, correct: 0 };
       skill.answered += 1;
       if (exact) skill.correct += 1;
       progress.skills[skillKey] = skill;
+      }
     }
     const key = `${q.category}|${q.sourceId}`;
     const item = progress.items[key] || { attempts: 0, correct: 0, misses: 0, streak: 0 };
@@ -1435,16 +1465,42 @@
     } else {
       item.misses += 1;
       item.streak = 0;
+      const errorType = q.category === "Articulated Preposition Forms" ? "combination_error"
+        : q.category === "Articulated Prepositions in Sentences" ? "preposition_usage_error" : "";
+      if (errorType) progress.errorTypes[errorType] = (progress.errorTypes[errorType] || 0) + 1;
       progress.mistakes[key] = {
         key, category: q.category, sourceId: q.sourceId, label: q.display,
-        misses: (progress.mistakes[key]?.misses || 0) + 1, streak: 0, lastMiss: Date.now()
+        misses: (progress.mistakes[key]?.misses || 0) + 1, streak: 0, lastMiss: Date.now(), ...(errorType ? { errorType } : {})
       };
       const delay = activeUnit === "unit3" ? 8 + Math.floor(Math.random() * 3) : 4;
-      progress.reviewQueue.push({ category: q.category, sourceId: q.sourceId, due: progress.today.answered + delay });
+      progress.reviewQueue.push({ category: q.category, sourceId: q.reviewSourceId || q.sourceId, due: progress.today.answered + delay });
       progress.reviewQueue = progress.reviewQueue.slice(-40);
     }
     progress.items[key] = item;
     saveProgress();
+  }
+
+  function recordArticulatedMatchingPairs() {
+    if (activeUnit !== "unit3" || session.current.category !== "Articulated Preposition Forms") return;
+    const mistaken = session.matchState.mistaken || new Set();
+    session.matchState.pairs.forEach((pair) => {
+      if (!pair.sourceId) return;
+      const key = `Articulated Preposition Forms|${pair.sourceId}`;
+      const exact = !mistaken.has(pair.id);
+      const item = progress.items[key] || { attempts: 0, correct: 0, misses: 0, streak: 0 };
+      item.attempts += 1;
+      item.lastSeen = Date.now();
+      if (exact) { item.correct += 1; item.streak += 1; }
+      else {
+        item.misses += 1;
+        item.streak = 0;
+        progress.mistakes[key] = { key, category: "Articulated Preposition Forms", sourceId: pair.sourceId, label: pair.left,
+          misses: (progress.mistakes[key]?.misses || 0) + 1, streak: 0, lastMiss: Date.now(), errorType: "combination_error" };
+        progress.reviewQueue.push({ category: "Articulated Preposition Forms", sourceId: `${pair.sourceId}#reverse`, due: progress.today.answered + 8 + Math.floor(Math.random() * 3) });
+        progress.errorTypes.combination_error = (progress.errorTypes.combination_error || 0) + 1;
+      }
+      progress.items[key] = item;
+    });
   }
 
   function pickMatchingCategory() {
@@ -1477,7 +1533,7 @@
 
   function renderMatching(area, question) {
     const pairs = question.pairs.map((pair, index) => ({ ...pair, id: `pair-${index}` }));
-    session.matchState = { selectedLeft: null, selectedRight: null, matched: new Set(), mismatches: 0, pairs };
+    session.matchState = { selectedLeft: null, selectedRight: null, matched: new Set(), mistaken: new Set(), mismatches: 0, pairs };
     const right = shuffle(pairs);
     area.innerHTML = `<div class="matching-board"><div class="match-column"><small>From</small>${pairs.map((pair) => `<button class="match-item" data-side="left" data-id="${pair.id}" type="button">${escapeHtml(pair.left)}</button>`).join("")}</div><div class="match-column"><small>To</small>${right.map((pair) => `<button class="match-item" data-side="right" data-id="${pair.id}" type="button">${escapeHtml(pair.right)}</button>`).join("")}</div></div>`;
     $$(".match-item").forEach((button) => button.addEventListener("click", () => selectMatch(button)));
@@ -1499,6 +1555,8 @@
       match.matched.add(match.selectedLeft);
     } else {
       match.mismatches += 1;
+      match.mistaken.add(match.selectedLeft);
+      match.mistaken.add(match.selectedRight);
       [leftButton, rightButton].forEach((item) => { item.classList.remove("selected"); item.classList.add("shake"); setTimeout(() => item.classList.remove("shake"), 550); });
     }
     match.selectedLeft = null;
@@ -1510,6 +1568,7 @@
     const q = session.current;
     const result = session.matchState.mismatches === 0 ? "correct" : "incorrect";
     session.feedbackShown = true;
+    recordArticulatedMatchingPairs();
     recordResult(q, result);
     const feedback = $("#feedback");
     feedback.className = `feedback ${result}`;
@@ -1729,6 +1788,13 @@
       const button = event.target.closest("[data-vocabulary-filter]");
       if (!button) return;
       vocabularyFilter = button.dataset.vocabularyFilter;
+      prepositionVocabularyFilter = "all";
+      renderVocabulary(new Set());
+    });
+    $("#preposition-vocabulary-filters").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-preposition-vocabulary-filter]");
+      if (!button) return;
+      prepositionVocabularyFilter = button.dataset.prepositionVocabularyFilter;
       renderVocabulary(new Set());
     });
     $("#show-all-vocabulary").addEventListener("click", () => renderVocabulary(true));
