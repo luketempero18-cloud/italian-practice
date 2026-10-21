@@ -249,6 +249,14 @@ select, .typed-input { width: 100%; margin-top: 7px; padding: 12px 14px; border:
 .learn-chart strong { color: var(--green); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
 .learn-chart span { margin-top: 4px; font-family: Georgia, "Times New Roman", serif; font-size: 18px; }
 .vocabulary-subfilters { margin-top: -8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #f7faf7; }
+.possessive-vocabulary-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; background: white; }
+.possessive-vocabulary-table { width: 100%; min-width: 560px; border-collapse: collapse; text-align: left; }
+.possessive-vocabulary-table th { padding: 13px 16px; color: var(--green); background: var(--green-soft); font-size: 12px; text-transform: uppercase; letter-spacing: .055em; }
+.possessive-vocabulary-table td { padding: 13px 16px; border-top: 1px solid var(--line); }
+.possessive-vocabulary-table td:first-child { font-family: Georgia, "Times New Roman", serif; font-size: 19px; }
+.possessive-vocabulary-table td:nth-child(2), .possessive-vocabulary-table td:nth-child(3) { color: var(--muted); }
+.possessive-loro-note { display: grid; gap: 5px; margin: 0 16px 16px; padding: 15px 16px; border-left: 4px solid var(--green); border-radius: 10px; background: #f3f8f4; }
+.possessive-loro-note span { color: var(--muted); }
 .learn-card section { margin-top: 28px; }
 .learn-card h3 { margin: 0 0 10px; font-size: 18px; }
 .learn-card ul { margin: 0; padding-left: 22px; line-height: 1.8; }

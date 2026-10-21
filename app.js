@@ -331,7 +331,9 @@
       const prepFormAccuracy = accuracy(progress.skills.articulatedPrepositionFormAccuracy);
       const prepContextAccuracy = accuracy(progress.skills.articulatedPrepositionContextAccuracy);
       const articleAccuracy = accuracy(progress.skills.articleRecognitionAccuracy);
-      unit3Extra.innerHTML = `<article><strong>${streak}</strong><small>Current streak</small></article><article><strong>${mastered}</strong><small>Terms mastered</small></article><article><strong>${learning}</strong><small>Terms learning</small></article><article><strong>${mistakeCount}</strong><small>Mistakes</small></article><article><strong>${iscVocabulary === null ? "—" : `${iscVocabulary}%`}</strong><small>-ISC meanings</small></article><article><strong>${iscConjugation === null ? "—" : `${iscConjugation}%`}</strong><small>-ISC conjugation</small></article><article><strong>${houseAccuracy === null ? "—" : `${houseAccuracy}%`}</strong><small>House vocabulary</small></article><article><strong>${prepFormAccuracy === null ? "—" : `${prepFormAccuracy}%`}</strong><small>Preposition forms</small></article><article><strong>${prepContextAccuracy === null ? "—" : `${prepContextAccuracy}%`}</strong><small>Prepositions in context</small></article><article><strong>${articleAccuracy === null ? "—" : `${articleAccuracy}%`}</strong><small>Article recognition</small></article><article><strong>${progress.errorTypes.combination_error || 0}</strong><small>Combination errors</small></article><article><strong>${progress.errorTypes.preposition_usage_error || 0}</strong><small>Usage errors</small></article>`;
+      const possessiveVocabularyAccuracy = accuracy(progress.skills.possessiveVocabularyAccuracy);
+      const possessiveGrammarAccuracy = accuracy(progress.skills.possessiveGrammarAccuracy);
+      unit3Extra.innerHTML = `<article><strong>${streak}</strong><small>Current streak</small></article><article><strong>${mastered}</strong><small>Terms mastered</small></article><article><strong>${learning}</strong><small>Terms learning</small></article><article><strong>${mistakeCount}</strong><small>Mistakes</small></article><article><strong>${iscVocabulary === null ? "—" : `${iscVocabulary}%`}</strong><small>-ISC meanings</small></article><article><strong>${iscConjugation === null ? "—" : `${iscConjugation}%`}</strong><small>-ISC conjugation</small></article><article><strong>${possessiveVocabularyAccuracy === null ? "—" : `${possessiveVocabularyAccuracy}%`}</strong><small>Possessive meanings</small></article><article><strong>${possessiveGrammarAccuracy === null ? "—" : `${possessiveGrammarAccuracy}%`}</strong><small>Possessive grammar</small></article><article><strong>${houseAccuracy === null ? "—" : `${houseAccuracy}%`}</strong><small>House vocabulary</small></article><article><strong>${prepFormAccuracy === null ? "—" : `${prepFormAccuracy}%`}</strong><small>Preposition forms</small></article><article><strong>${prepContextAccuracy === null ? "—" : `${prepContextAccuracy}%`}</strong><small>Prepositions in context</small></article><article><strong>${articleAccuracy === null ? "—" : `${articleAccuracy}%`}</strong><small>Article recognition</small></article><article><strong>${progress.errorTypes.combination_error || 0}</strong><small>Combination errors</small></article><article><strong>${progress.errorTypes.preposition_usage_error || 0}</strong><small>Usage errors</small></article>`;
     }
 
     const mistakes = Object.values(progress.mistakes).reduce((total, item) => total + Math.max(1, item.misses || 1), 0);
@@ -586,6 +588,10 @@
       .filter((entry) => !query || normalize(entry.italian).includes(query) || normalize(entry.english).includes(query))
       .sort((a, b) => (sortBy === "english" ? a.english.localeCompare(b.english, "en") : a.italian.localeCompare(b.italian, "it-IT")));
     $("#vocabulary-count").textContent = `${entries.length} ${entries.length === 1 ? "entry" : "entries"}`;
+    if (activeUnit === "unit3" && vocabularyFilter === "possessives") {
+      $("#vocabulary-list").innerHTML = entries.length ? `<div class="possessive-vocabulary-wrap"><table class="possessive-vocabulary-table"><thead><tr><th>Italian</th><th>English</th><th>Gender / Number</th></tr></thead><tbody>${entries.map((entry) => `<tr><td><strong>${escapeHtml(entry.italian)}</strong></td><td>${escapeHtml(entry.english)}</td><td>${escapeHtml(entry.genderNumber)}</td></tr>`).join("")}</tbody></table><aside class="possessive-loro-note"><strong>Loro does not change.</strong><span>il loro libro · la loro sedia · i loro amici · le loro lezioni</span></aside></div>` : '<div class="empty-state"><h2>No words found</h2><p>Try a different Italian or English search.</p></div>';
+      return;
+    }
     $("#vocabulary-list").innerHTML = entries.map((entry) => {
       const { italian, english, tag, register, variants } = entry;
       const key = lexicalKey(italian);
@@ -1406,7 +1412,7 @@
       const italian = entry.italian || entry.infinitive || entry.singular || "";
       const italianForms = [italian, entry.infinitive, entry.singular, entry.plural, ...(entry.acceptedItalian || []), ...Object.values(entry.forms || {})]
         .filter(Boolean);
-      if (italianForms.some((form) => normalize(form) === entered)) return `“${userAnswer}” means “${entry.english}.”`;
+      if (italianForms.some((form) => normalize(form) === entered)) return `“${userAnswer}” means “${entry.fullMeaning || entry.english}.”`;
       if (translationAnswers(entry.english || "").some((meaning) => normalize(meaning) === entered)) return `“${userAnswer}” is the English meaning of “${italian}.”`;
     }
     return "";
@@ -1435,6 +1441,12 @@
       const unit3SkillMap = {
         "-IRE + -ISC Verb Vocabulary": "iscVocabularyAccuracy",
         "-IRE Verbs with -ISC": "iscConjugationAccuracy",
+        "Possessive Vocabulary": "possessiveVocabularyAccuracy",
+        "Possessive Adjectives": "possessiveGrammarAccuracy",
+        "Possessives with Family Members": "possessiveGrammarAccuracy",
+        "Possessive Pronouns": "possessiveGrammarAccuracy",
+        "Possessives with DI": "possessiveGrammarAccuracy",
+        "Mixed Possessives": "possessiveGrammarAccuracy",
         "House — Rooms": "houseVocabularyAccuracy",
         "House — Furniture": "houseVocabularyAccuracy",
         "House — Other": "houseVocabularyAccuracy",
@@ -1498,6 +1510,34 @@
           misses: (progress.mistakes[key]?.misses || 0) + 1, streak: 0, lastMiss: Date.now(), errorType: "combination_error" };
         progress.reviewQueue.push({ category: "Articulated Preposition Forms", sourceId: `${pair.sourceId}#reverse`, due: progress.today.answered + 8 + Math.floor(Math.random() * 3) });
         progress.errorTypes.combination_error = (progress.errorTypes.combination_error || 0) + 1;
+      }
+      progress.items[key] = item;
+    });
+  }
+
+  function recordPossessiveMatchingPairs() {
+    if (activeUnit !== "unit3" || session.current.category !== "Possessive Vocabulary") return;
+    const mistaken = session.matchState.mistaken || new Set();
+    session.matchState.pairs.forEach((pair) => {
+      if (!pair.sourceId) return;
+      const key = `Possessive Vocabulary|${pair.sourceId}`;
+      const exact = !mistaken.has(pair.id);
+      const item = progress.items[key] || { attempts: 0, correct: 0, misses: 0, streak: 0 };
+      item.attempts += 1;
+      item.lastSeen = Date.now();
+      if (exact) {
+        item.correct += 1;
+        item.streak += 1;
+        if (progress.mistakes[key]) {
+          progress.mistakes[key].streak = (progress.mistakes[key].streak || 0) + 1;
+          if (progress.mistakes[key].streak >= 2) delete progress.mistakes[key];
+        }
+      } else {
+        item.misses += 1;
+        item.streak = 0;
+        progress.mistakes[key] = { key, category: "Possessive Vocabulary", sourceId: pair.sourceId, label: pair.left,
+          misses: (progress.mistakes[key]?.misses || 0) + 1, streak: 0, lastMiss: Date.now() };
+        progress.reviewQueue.push({ category: "Possessive Vocabulary", sourceId: pair.sourceId, due: progress.today.answered + 8 + Math.floor(Math.random() * 3) });
       }
       progress.items[key] = item;
     });
@@ -1569,6 +1609,7 @@
     const result = session.matchState.mismatches === 0 ? "correct" : "incorrect";
     session.feedbackShown = true;
     recordArticulatedMatchingPairs();
+    recordPossessiveMatchingPairs();
     recordResult(q, result);
     const feedback = $("#feedback");
     feedback.className = `feedback ${result}`;
