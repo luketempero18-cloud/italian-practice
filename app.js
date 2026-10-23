@@ -327,13 +327,17 @@
       const mistakeCount = Object.keys(progress.mistakes).length;
       const iscVocabulary = accuracy(progress.skills.iscVocabularyAccuracy);
       const iscConjugation = accuracy(progress.skills.iscConjugationAccuracy);
+      const irregularEreVocabulary = accuracy(progress.skills.irregularEreVocabularyAccuracy);
+      const irregularEreConjugation = accuracy(progress.skills.irregularEreConjugationAccuracy);
+      const irregularIreVocabulary = accuracy(progress.skills.irregularIreVocabularyAccuracy);
+      const irregularIreConjugation = accuracy(progress.skills.irregularIreConjugationAccuracy);
       const houseAccuracy = accuracy(progress.skills.houseVocabularyAccuracy);
       const prepFormAccuracy = accuracy(progress.skills.articulatedPrepositionFormAccuracy);
       const prepContextAccuracy = accuracy(progress.skills.articulatedPrepositionContextAccuracy);
       const articleAccuracy = accuracy(progress.skills.articleRecognitionAccuracy);
       const possessiveVocabularyAccuracy = accuracy(progress.skills.possessiveVocabularyAccuracy);
       const possessiveGrammarAccuracy = accuracy(progress.skills.possessiveGrammarAccuracy);
-      unit3Extra.innerHTML = `<article><strong>${streak}</strong><small>Current streak</small></article><article><strong>${mastered}</strong><small>Terms mastered</small></article><article><strong>${learning}</strong><small>Terms learning</small></article><article><strong>${mistakeCount}</strong><small>Mistakes</small></article><article><strong>${iscVocabulary === null ? "—" : `${iscVocabulary}%`}</strong><small>-ISC meanings</small></article><article><strong>${iscConjugation === null ? "—" : `${iscConjugation}%`}</strong><small>-ISC conjugation</small></article><article><strong>${possessiveVocabularyAccuracy === null ? "—" : `${possessiveVocabularyAccuracy}%`}</strong><small>Possessive meanings</small></article><article><strong>${possessiveGrammarAccuracy === null ? "—" : `${possessiveGrammarAccuracy}%`}</strong><small>Possessive grammar</small></article><article><strong>${houseAccuracy === null ? "—" : `${houseAccuracy}%`}</strong><small>House vocabulary</small></article><article><strong>${prepFormAccuracy === null ? "—" : `${prepFormAccuracy}%`}</strong><small>Preposition forms</small></article><article><strong>${prepContextAccuracy === null ? "—" : `${prepContextAccuracy}%`}</strong><small>Prepositions in context</small></article><article><strong>${articleAccuracy === null ? "—" : `${articleAccuracy}%`}</strong><small>Article recognition</small></article><article><strong>${progress.errorTypes.combination_error || 0}</strong><small>Combination errors</small></article><article><strong>${progress.errorTypes.preposition_usage_error || 0}</strong><small>Usage errors</small></article>`;
+      unit3Extra.innerHTML = `<article><strong>${streak}</strong><small>Current streak</small></article><article><strong>${mastered}</strong><small>Terms mastered</small></article><article><strong>${learning}</strong><small>Terms learning</small></article><article><strong>${mistakeCount}</strong><small>Mistakes</small></article><article><strong>${irregularEreVocabulary === null ? "—" : `${irregularEreVocabulary}%`}</strong><small>Irregular -ERE meanings</small></article><article><strong>${irregularEreConjugation === null ? "—" : `${irregularEreConjugation}%`}</strong><small>Irregular -ERE forms</small></article><article><strong>${irregularIreVocabulary === null ? "—" : `${irregularIreVocabulary}%`}</strong><small>Irregular -IRE meanings</small></article><article><strong>${irregularIreConjugation === null ? "—" : `${irregularIreConjugation}%`}</strong><small>Irregular -IRE forms</small></article><article><strong>${iscVocabulary === null ? "—" : `${iscVocabulary}%`}</strong><small>-ISC meanings</small></article><article><strong>${iscConjugation === null ? "—" : `${iscConjugation}%`}</strong><small>-ISC conjugation</small></article><article><strong>${possessiveVocabularyAccuracy === null ? "—" : `${possessiveVocabularyAccuracy}%`}</strong><small>Possessive meanings</small></article><article><strong>${possessiveGrammarAccuracy === null ? "—" : `${possessiveGrammarAccuracy}%`}</strong><small>Possessive grammar</small></article><article><strong>${houseAccuracy === null ? "—" : `${houseAccuracy}%`}</strong><small>House vocabulary</small></article><article><strong>${prepFormAccuracy === null ? "—" : `${prepFormAccuracy}%`}</strong><small>Preposition forms</small></article><article><strong>${prepContextAccuracy === null ? "—" : `${prepContextAccuracy}%`}</strong><small>Prepositions in context</small></article><article><strong>${articleAccuracy === null ? "—" : `${articleAccuracy}%`}</strong><small>Article recognition</small></article><article><strong>${progress.errorTypes.combination_error || 0}</strong><small>Combination errors</small></article><article><strong>${progress.errorTypes.preposition_usage_error || 0}</strong><small>Usage errors</small></article>`;
     }
 
     const mistakes = Object.values(progress.mistakes).reduce((total, item) => total + Math.max(1, item.misses || 1), 0);
@@ -590,6 +594,10 @@
     $("#vocabulary-count").textContent = `${entries.length} ${entries.length === 1 ? "entry" : "entries"}`;
     if (activeUnit === "unit3" && vocabularyFilter === "possessives") {
       $("#vocabulary-list").innerHTML = entries.length ? `<div class="possessive-vocabulary-wrap"><table class="possessive-vocabulary-table"><thead><tr><th>Italian</th><th>English</th><th>Gender / Number</th></tr></thead><tbody>${entries.map((entry) => `<tr><td><strong>${escapeHtml(entry.italian)}</strong></td><td>${escapeHtml(entry.english)}</td><td>${escapeHtml(entry.genderNumber)}</td></tr>`).join("")}</tbody></table><aside class="possessive-loro-note"><strong>Loro does not change.</strong><span>il loro libro · la loro sedia · i loro amici · le loro lezioni</span></aside></div>` : '<div class="empty-state"><h2>No words found</h2><p>Try a different Italian or English search.</p></div>';
+      return;
+    }
+    if (activeUnit === "unit3" && ["irregular-ere", "irregular-ire"].includes(vocabularyFilter)) {
+      $("#vocabulary-list").innerHTML = entries.length ? `<div class="possessive-vocabulary-wrap"><table class="possessive-vocabulary-table verb-vocabulary-table"><thead><tr><th>Italian</th><th>English</th><th>Type</th></tr></thead><tbody>${entries.map((entry) => `<tr><td><strong>${escapeHtml(entry.italian)}</strong></td><td>${escapeHtml(entry.english)}</td><td>${escapeHtml(entry.verbType)}</td></tr>`).join("")}</tbody></table></div>` : '<div class="empty-state"><h2>No words found</h2><p>Try a different Italian or English search.</p></div>';
       return;
     }
     $("#vocabulary-list").innerHTML = entries.map((entry) => {
@@ -1260,7 +1268,7 @@
       if (choice !== undefined && choice !== null && !unique.some((value) => normalize(value) === normalize(choice))) unique.push(String(choice));
     });
     const binary = unique.length === 2 && unique.every((value) => ["vero", "falso", "true", "false"].includes(normalize(value)));
-    const target = binary || question.category === "Gender" || question.category === "Formal vs Informal" || question.category === "C'è / Ci sono" || (activeUnit === "unit2" && question.category === "Piacere") ? 2 : 4;
+    const target = question.choiceCount || (binary || question.category === "Gender" || question.category === "Formal vs Informal" || question.category === "C'è / Ci sono" || (activeUnit === "unit2" && question.category === "Piacere") ? 2 : 4);
     const fallbacks = activeUnit === "unit1" ? ["il", "lo", "la", "l'", "i", "gli", "le", "un", "uno", "una", "un'"] : [];
     for (const fallback of fallbacks) {
       if (unique.length >= target) break;
@@ -1439,6 +1447,10 @@
     progress.categories[q.category] = categoryStats;
     if (activeUnit === "unit3") {
       const unit3SkillMap = {
+        "Irregular -ERE Verb Vocabulary": "irregularEreVocabularyAccuracy",
+        "Irregular -ERE Conjugations": "irregularEreConjugationAccuracy",
+        "Irregular -IRE Verb Vocabulary": "irregularIreVocabularyAccuracy",
+        "Irregular -IRE Conjugations": "irregularIreConjugationAccuracy",
         "-IRE + -ISC Verb Vocabulary": "iscVocabularyAccuracy",
         "-IRE Verbs with -ISC": "iscConjugationAccuracy",
         "Possessive Vocabulary": "possessiveVocabularyAccuracy",

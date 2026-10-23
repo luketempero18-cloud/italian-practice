@@ -19,10 +19,12 @@
     explanation: question.explanation, category: question.category, type: "radio" });
 
   const CONFIG = [
-    ["family", "Family Vocabulary", 10, ["Core Family Vocabulary", "Extended Family Vocabulary", "Family Relationships / Status", "Family Tree Practice"]],
-    ["ere", "-ERE Verbs", 6, ["Regular -ERE Verbs"]],
-    ["ire", "Regular -IRE Verbs", 5, ["Regular -IRE Verbs"]],
-    ["isc", "-IRE Verbs with -ISC", 7, ["-IRE Verbs with -ISC"]],
+    ["family", "Family Vocabulary", 7, ["Core Family Vocabulary", "Extended Family Vocabulary", "Family Relationships / Status", "Family Tree Practice"]],
+    ["ere", "Regular -ERE Verbs", 5, ["Regular -ERE Verbs"]],
+    ["irregular-ere", "Irregular -ERE Verbs", 3, ["Irregular -ERE Verb Vocabulary", "Irregular -ERE Conjugations"]],
+    ["ire", "Regular -IRE Verbs", 4, ["Regular -IRE Verbs"]],
+    ["isc", "-IRE Verbs with -ISC", 5, ["-IRE Verbs with -ISC"]],
+    ["irregular-ire", "Irregular -IRE Verbs", 4, ["Irregular -IRE Verb Vocabulary", "Irregular -IRE Conjugations"]],
     ["poss-adj", "Possessive Adjectives", 5, ["Possessive Adjectives"]],
     ["poss-family", "Family Possessive Rules", 3, ["Possessives with Family Members"]],
     ["poss-pronoun", "Possessive Pronouns", 2, ["Possessive Pronouns"]],

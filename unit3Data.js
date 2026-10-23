@@ -100,7 +100,19 @@
     verb("restituire", "to return / give back", "ire-isc", forms("restituisco", "restituisci", "restituisce", "restituiamo", "restituite", "restituiscono")),
     verb("spedire", "to send", "ire-isc", forms("spedisco", "spedisci", "spedisce", "spediamo", "spedite", "spediscono"))
   ];
-  const VERBS = [...ERE, ...IRE, ...ISC];
+  const IRREGULAR_ERE = [
+    verb("bere", "to drink", "irregular-ere", forms("bevo", "bevi", "beve", "beviamo", "bevete", "bevono")),
+    verb("sapere", "to know", "irregular-ere", forms("so", "sai", "sa", "sappiamo", "sapete", "sanno")),
+    verb("scegliere", "to choose", "irregular-ere", forms("scelgo", "scegli", "sceglie", "scegliamo", "scegliete", "scelgono"))
+  ];
+  const IRREGULAR_IRE = [
+    verb("dire", "to say / tell", "irregular-ire", forms("dico", "dici", "dice", "diciamo", "dite", "dicono")),
+    verb("salire", "to go up", "irregular-ire", forms("salgo", "sali", "sale", "saliamo", "salite", "salgono")),
+    verb("uscire", "to go out", "irregular-ire", forms("esco", "esci", "esce", "usciamo", "uscite", "escono")),
+    verb("venire", "to come", "irregular-ire", forms("vengo", "vieni", "viene", "veniamo", "venite", "vengono"))
+  ];
+  const IRREGULAR_VERBS = [...IRREGULAR_ERE, ...IRREGULAR_IRE];
+  const VERBS = [...ERE, ...IRE, ...ISC, ...IRREGULAR_VERBS];
 
   const house = (id, italian, english, group, article, options = {}) => ({
     id: `house-${id}`, italian, english, article, groups: [group, "house"], tag: options.tag || "House",
@@ -164,8 +176,10 @@
     "Extended Family Vocabulary": FAMILY_EXTENDED,
     "Family Relationships / Status": FAMILY_RELATIONSHIPS,
     "-ERE Verb Vocabulary": ERE,
+    "Irregular -ERE Verb Vocabulary": IRREGULAR_ERE,
     "-IRE Verb Vocabulary": IRE,
     "-IRE + -ISC Verb Vocabulary": ISC,
+    "Irregular -IRE Verb Vocabulary": IRREGULAR_IRE,
     "Possessive Vocabulary": [],
     "House — Rooms": HOUSE_ROOMS,
     "House — Furniture": HOUSE_FURNITURE,
@@ -173,7 +187,8 @@
   };
   const CATEGORIES = [
     "Core Family Vocabulary", "Extended Family Vocabulary", "Family Relationships / Status", "Family Tree Practice",
-    "-ERE Verb Vocabulary", "Regular -ERE Verbs", "-IRE Verb Vocabulary", "Regular -IRE Verbs", "-IRE + -ISC Verb Vocabulary", "-IRE Verbs with -ISC", "Mixed -ERE / -IRE Conjugation",
+    "-ERE Verb Vocabulary", "Irregular -ERE Verb Vocabulary", "Regular -ERE Verbs", "Irregular -ERE Conjugations",
+    "-IRE Verb Vocabulary", "Irregular -IRE Verb Vocabulary", "Regular -IRE Verbs", "-IRE + -ISC Verb Vocabulary", "-IRE Verbs with -ISC", "Irregular -IRE Conjugations", "Mixed -ERE / -IRE Conjugation",
     "Possessive Vocabulary", "Possessive Adjectives", "Possessives with Family Members", "Possessive Pronouns", "Possessives with DI", "Mixed Possessives",
     "House — Rooms", "House — Furniture", "House — Other", "In Which Room?",
     "Articulated Preposition Forms", "Articulated Prepositions in Sentences", "Article Recognition", "Culture & Recognition"
@@ -183,11 +198,15 @@
       ["Core Family Vocabulary", "Immediate family"], ["Extended Family Vocabulary", "Relatives and in-laws"],
       ["Family Relationships / Status", "Status, stepfamily, older / younger"], ["Family Tree Practice", "Relationship reasoning"]
     ] },
-    { name: "Verbs", topics: [
-      ["-ERE Verb Vocabulary", "Learn what -ERE verbs mean"], ["Regular -ERE Verbs", "Learn to conjugate them"],
-      ["-IRE Verb Vocabulary", "Learn what regular -IRE verbs mean"], ["Regular -IRE Verbs", "Learn to conjugate them"],
-      ["-IRE + -ISC Verb Vocabulary", "Learn what -isc verbs mean · meanings only"], ["-IRE Verbs with -ISC", "Learn to conjugate them"],
-      ["Mixed -ERE / -IRE Conjugation", "Choose the pattern first"]
+    { name: "Verb Vocabulary", topics: [
+      ["-ERE Verb Vocabulary", "Regular -ERE meanings"], ["Irregular -ERE Verb Vocabulary", "bere · sapere · scegliere"],
+      ["-IRE Verb Vocabulary", "Regular -IRE meanings"], ["-IRE + -ISC Verb Vocabulary", "Learn what -isc verbs mean"],
+      ["Irregular -IRE Verb Vocabulary", "dire · salire · uscire · venire"]
+    ] },
+    { name: "Conjugations", topics: [
+      ["Regular -ERE Verbs", "Regular -ERE forms"], ["Irregular -ERE Conjugations", "Irregular forms from the course"],
+      ["Regular -IRE Verbs", "Regular -IRE forms"], ["-IRE Verbs with -ISC", "Conjugate with the -isc pattern"],
+      ["Irregular -IRE Conjugations", "Irregular forms from the course"], ["Mixed Verb Conjugation", "Mix all five verb families"]
     ] },
     { name: "Possessives", topics: [
       ["Possessive Vocabulary", "Learn what every individual form means"], ["Possessive Adjectives", "Agreement with the thing possessed"], ["Possessives with Family Members", "Article or no article?"],
@@ -207,7 +226,7 @@
   const TOPICS = TOPIC_GROUPS.flatMap((group) => group.topics.map(([topic]) => topic));
   const PRESETS = {
     family: ["Core Family Vocabulary", "Extended Family Vocabulary", "Family Relationships / Status", "Family Tree Practice"],
-    verbs: ["-ERE Verb Vocabulary", "Regular -ERE Verbs", "-IRE Verb Vocabulary", "Regular -IRE Verbs", "-IRE + -ISC Verb Vocabulary", "-IRE Verbs with -ISC", "Mixed -ERE / -IRE Conjugation"],
+    verbs: ["-ERE Verb Vocabulary", "Irregular -ERE Verb Vocabulary", "-IRE Verb Vocabulary", "-IRE + -ISC Verb Vocabulary", "Irregular -IRE Verb Vocabulary", "Regular -ERE Verbs", "Irregular -ERE Conjugations", "Regular -IRE Verbs", "-IRE Verbs with -ISC", "Irregular -IRE Conjugations", "Mixed Verb Conjugation"],
     possessives: ["Possessive Vocabulary", "Possessive Adjectives", "Possessives with Family Members", "Possessive Pronouns", "Possessives with DI", "Mixed Possessives"],
     house: ["House Vocabulary", "In Which Room?"],
     prepositions: ["Articulated Preposition Forms", "Articulated Prepositions in Sentences", "Article Recognition", "Possessives with DI"],
@@ -215,11 +234,12 @@
     everything: [...TOPICS]
   };
   const PRESET_LABELS = { family: "Family", verbs: "Verbs", possessives: "Possessives", house: "House", prepositions: "Prepositions", priority: "Main topics", everything: "Everything" };
-  const MATCHING_CATEGORIES = ["Core Family Vocabulary", "Extended Family Vocabulary", "Family Relationships / Status", "-ERE Verb Vocabulary", "-IRE Verb Vocabulary", "-IRE + -ISC Verb Vocabulary", "Possessive Vocabulary", "Regular -ERE Verbs", "Regular -IRE Verbs", "-IRE Verbs with -ISC", "House — Rooms", "House — Furniture", "House — Other", "Articulated Preposition Forms"];
+  const MATCHING_CATEGORIES = ["Core Family Vocabulary", "Extended Family Vocabulary", "Family Relationships / Status", "-ERE Verb Vocabulary", "Irregular -ERE Verb Vocabulary", "-IRE Verb Vocabulary", "-IRE + -ISC Verb Vocabulary", "Irregular -IRE Verb Vocabulary", "Possessive Vocabulary", "Regular -ERE Verbs", "Irregular -ERE Conjugations", "Regular -IRE Verbs", "-IRE Verbs with -ISC", "Irregular -IRE Conjugations", "Mixed -ERE / -IRE Conjugation", "House — Rooms", "House — Furniture", "House — Other", "Articulated Preposition Forms"];
   const TOPIC_CATEGORY_MAP = {
     "House Vocabulary": ["House — Rooms", "House — Furniture", "House — Other"],
     "Rooms of the House": ["House — Rooms"],
-    Furniture: ["House — Furniture"]
+    Furniture: ["House — Furniture"],
+    "Mixed Verb Conjugation": ["Mixed -ERE / -IRE Conjugation"]
   };
 
   const POSSESSIVES = {
@@ -285,8 +305,24 @@
     ["seguire", "lui/lei/Lei", "Lui ___ cinque corsi."], ["servire", "lui/lei/Lei", "Il barista ___ il caffè."],
     ["pulire", "io", "Ogni domenica io ___ la casa."], ["finire", "loro", "Le lezioni ___ alle sei."],
     ["spedire", "lui/lei/Lei", "La tua famiglia ___ molti regali."], ["capire", "noi", "Noi non ___ il problema."],
-    ["preferire", "tu", "Tu ___ storia o letteratura?"], ["restituire", "voi", "Quando ___ voi i libri?"]
+    ["preferire", "tu", "Tu ___ storia o letteratura?"], ["restituire", "voi", "Quando ___ voi i libri?"],
+    ["bere", "io", "A colazione io ___ un caffè."], ["bere", "loro", "Loro ___ molta acqua."],
+    ["sapere", "io", "Io non ___ la risposta."], ["sapere", "noi", "Noi ___ parlare italiano."],
+    ["scegliere", "tu", "Tu ___ il corso di storia."], ["scegliere", "loro", "Loro ___ una casa in centro."],
+    ["dire", "io", "Io ___ sempre la verità."], ["dire", "voi", "Voi ___ buongiorno alla professoressa."],
+    ["salire", "noi", "Noi ___ al primo piano."], ["salire", "lui/lei/Lei", "Maria ___ sull’autobus."],
+    ["uscire", "tu", "Tu ___ con gli amici stasera."], ["uscire", "loro", "Loro ___ alle otto."],
+    ["venire", "loro", "Loro ___ con noi."], ["venire", "loro", "Luca e Marco ___ a casa."],
+    ["venire", "lui/lei/Lei", "Luca ___ a casa dopo la lezione."]
   ].map(([verbId, subject, prompt]) => ({ id: `context-${verbId}-${subject}`, verbId, subject, prompt }));
+
+  const VERB_FAMILY_LABELS = {
+    ere: "regular -ERE",
+    "irregular-ere": "irregular -ERE",
+    "ire-regular": "regular -IRE",
+    "ire-isc": "-IRE + -ISC",
+    "irregular-ire": "irregular -IRE"
+  };
 
   const CULTURE = [
     ["region", "Veneto is a region in which part of Italy?", "northeastern Italy", ["northeastern Italy", "southern Italy", "Sicily", "Sardinia"]],
@@ -442,7 +478,14 @@
   }
 
   function verbVocabularyQuestion(category, sourceId, direction) {
-    const pool = category === "-ERE Verb Vocabulary" ? ERE : category === "-IRE + -ISC Verb Vocabulary" ? ISC : IRE;
+    const pools = {
+      "-ERE Verb Vocabulary": ERE,
+      "Irregular -ERE Verb Vocabulary": IRREGULAR_ERE,
+      "-IRE Verb Vocabulary": IRE,
+      "-IRE + -ISC Verb Vocabulary": ISC,
+      "Irregular -IRE Verb Vocabulary": IRREGULAR_IRE
+    };
+    const pool = pools[category];
     const item = choose(pool, sourceId);
     const toEnglish = directionToEnglish(direction);
     const answer = toEnglish ? item.english : item.infinitive;
@@ -498,21 +541,63 @@
   }
 
   function conjugationQuestion(category, sourceId) {
-    let pool = category === "Regular -ERE Verbs" ? ERE : category === "Regular -IRE Verbs" ? IRE : category === "-IRE Verbs with -ISC" ? ISC : VERBS;
-    const sourceVerb = sourceId?.replace(/^context-/, "").split(":")[0];
-    const item = pool.find((entry) => entry.id === sourceId || entry.id === sourceVerb) || random(pool);
+    const pools = {
+      "Regular -ERE Verbs": ERE,
+      "Irregular -ERE Conjugations": IRREGULAR_ERE,
+      "Regular -IRE Verbs": IRE,
+      "-IRE Verbs with -ISC": ISC,
+      "Irregular -IRE Conjugations": IRREGULAR_IRE,
+      "Mixed -ERE / -IRE Conjugation": VERBS
+    };
+    const pool = pools[category] || VERBS;
+    const [requestedId, requestedSubject] = String(sourceId || "").replace(/^context-/, "").split("#");
+    const sourceVerb = requestedId.split(":")[0];
+    const mixedFamilies = [ERE, IRREGULAR_ERE, IRE, ISC, IRREGULAR_IRE];
+    const item = pool.find((entry) => entry.id === requestedId || entry.id === sourceVerb)
+      || (category === "Mixed -ERE / -IRE Conjugation" ? random(random(mixedFamilies)) : random(pool));
+    const familyLabel = VERB_FAMILY_LABELS[item.conjugationType];
+
+    if (category === "Mixed -ERE / -IRE Conjugation" && !sourceId && Math.random() < 0.22) {
+      const question = baseQuestion(category, item.id, `u3-verb-family:${item.id}`, "Identify the verb family",
+        `Which verb family does ${item.infinitive.toUpperCase()} belong to?`, familyLabel,
+        `${item.infinitive} is in the ${familyLabel} family.`, Object.values(VERB_FAMILY_LABELS).filter((label) => label !== familyLabel));
+      question.forceChoice = true;
+      question.choiceCount = 5;
+      return question;
+    }
+
     const relevantContexts = VERB_CONTEXTS.filter((context) => context.verbId === item.id);
-    const useContext = relevantContexts.length && Math.random() < 0.62;
-    const context = useContext ? random(relevantContexts) : null;
-    const subject = context?.subject || random(SUBJECTS);
+    const reviewSubject = SUBJECTS.includes(requestedSubject) ? requestedSubject : null;
+    const availableVariants = relevantContexts.length ? ["context", "direct", "change", "identify"] : ["direct", "change", "identify"];
+    const variant = random(availableVariants);
+    const contextCandidates = reviewSubject ? relevantContexts.filter((entry) => entry.subject === reviewSubject) : relevantContexts;
+    const context = variant === "context" && contextCandidates.length ? random(contextCandidates) : null;
+    const subject = context?.subject || reviewSubject || random(SUBJECTS);
     const answer = item.forms[subject];
-    const pattern = item.conjugationType === "ire-isc" ? "-IRE + -ISC" : item.conjugationType === "ire-regular" ? "regular -IRE" : "-ERE";
-    const explanation = item.conjugationType === "ire-isc" && ["noi", "voi"].includes(subject)
+    const explanation = item.conjugationType.startsWith("irregular-")
+      ? `${item.infinitive} is an ${familyLabel} course verb. Memorize its given form: ${subject} → ${answer}.`
+      : item.conjugationType === "ire-isc" && ["noi", "voi"].includes(subject)
       ? `${item.infinitive} is an -isc verb, but ${subject.toUpperCase()} does not use -isc: ${answer}.`
-      : `${item.infinitive} follows the ${pattern} pattern: ${subject} → ${answer}.`;
-    return baseQuestion(category, item.id, `u3-conjugation:${item.id}:${subject}:${useContext}`, context ? `Complete with ${item.infinitive}` : `Conjugate ${item.infinitive}`,
-      context?.prompt || `${subject} + ${item.infinitive}`, answer, explanation,
-      [...new Set([...Object.values(item.forms), ...pool.map((verbItem) => verbItem.forms[subject])])].filter((form) => form !== answer));
+      : `${item.infinitive} follows the ${familyLabel} pattern: ${subject} → ${answer}.`;
+    const sameVerbDistractors = Object.values(item.forms).filter((form) => form !== answer);
+    const comparisonPool = item.conjugationType.startsWith("irregular-") ? IRREGULAR_VERBS : pool;
+    const otherVerbDistractor = random(comparisonPool.filter((verbItem) => verbItem.id !== item.id)).forms[subject];
+    let question;
+    if (variant === "identify") {
+      question = baseQuestion(category, item.id, `u3-conjugation:${item.id}:${subject}:identify`, "Identify the infinitive",
+        `${subject} ${answer} → infinitive?`, item.infinitive, `${answer} is the ${subject} form of ${item.infinitive}.`,
+        pool.filter((verbItem) => verbItem.id !== item.id).map((verbItem) => verbItem.infinitive));
+    } else if (variant === "change") {
+      const fromSubject = random(SUBJECTS.filter((candidate) => candidate !== subject));
+      question = baseQuestion(category, item.id, `u3-conjugation:${item.id}:${subject}:change`, `Change the subject to ${subject}`,
+        `${fromSubject} ${item.forms[fromSubject]} → ${subject} ___`, answer, explanation, [...sameVerbDistractors, otherVerbDistractor]);
+    } else {
+      question = baseQuestion(category, item.id, `u3-conjugation:${item.id}:${subject}:${context ? "context" : "direct"}`,
+        context ? `Complete with ${item.infinitive}` : `Conjugate ${item.infinitive}`,
+        context?.prompt || `${subject} + ${item.infinitive}`, answer, explanation, [...sameVerbDistractors, otherVerbDistractor]);
+    }
+    question.reviewSourceId = `${item.id}#${subject}`;
+    return question;
   }
 
   function possessiveAdjectiveQuestion(sourceId) {
@@ -596,9 +681,9 @@
     if (["Core Family Vocabulary", "Extended Family Vocabulary", "House — Rooms", "House — Furniture", "House — Other"].includes(category)) return vocabularyQuestion(category, sourceId, vocabularyDirection);
     if (category === "Family Relationships / Status") return relationshipQuestion(sourceId);
     if (category === "Family Tree Practice") return familyTreeQuestion(sourceId);
-    if (["-ERE Verb Vocabulary", "-IRE Verb Vocabulary", "-IRE + -ISC Verb Vocabulary"].includes(category)) return verbVocabularyQuestion(category, sourceId, vocabularyDirection);
+    if (["-ERE Verb Vocabulary", "Irregular -ERE Verb Vocabulary", "-IRE Verb Vocabulary", "-IRE + -ISC Verb Vocabulary", "Irregular -IRE Verb Vocabulary"].includes(category)) return verbVocabularyQuestion(category, sourceId, vocabularyDirection);
     if (category === "Possessive Vocabulary") return possessiveVocabularyQuestion(sourceId, vocabularyDirection);
-    if (["Regular -ERE Verbs", "Regular -IRE Verbs", "-IRE Verbs with -ISC", "Mixed -ERE / -IRE Conjugation"].includes(category)) return conjugationQuestion(category, sourceId);
+    if (["Regular -ERE Verbs", "Irregular -ERE Conjugations", "Regular -IRE Verbs", "-IRE Verbs with -ISC", "Irregular -IRE Conjugations", "Mixed -ERE / -IRE Conjugation"].includes(category)) return conjugationQuestion(category, sourceId);
     if (category === "Possessive Adjectives") return possessiveAdjectiveQuestion(sourceId);
     if (category === "Possessives with Family Members") return familyPossessiveQuestion(sourceId);
     if (category === "Possessive Pronouns") return possessivePronounQuestion(sourceId);
@@ -616,6 +701,10 @@
     if (category === "Articulated Preposition Forms") pairs = shuffle(PREPOSITION_FORMS).slice(0, 5).map((item) => ({ left: item.components, right: item.combined, sourceId: item.id }));
     else if (category === "Possessive Vocabulary") pairs = shuffle(POSSESSIVE_VOCABULARY).slice(0, 5).map((item) => ({ left: item.italian, right: item.fullMeaning, sourceId: item.id }));
     else if (CATEGORY_POOLS[category]) pairs = shuffle(CATEGORY_POOLS[category]).slice(0, 5).map((item) => ({ left: item.italian, right: item.english }));
+    else if (["Irregular -ERE Conjugations", "Irregular -IRE Conjugations", "Mixed -ERE / -IRE Conjugation"].includes(category)) {
+      const pool = category === "Irregular -ERE Conjugations" ? IRREGULAR_ERE : category === "Irregular -IRE Conjugations" ? IRREGULAR_IRE : VERBS;
+      pairs = shuffle(pool.flatMap((item) => SUBJECTS.map((subject) => ({ left: `${item.infinitive} — ${subject}`, right: item.forms[subject], sourceId: item.id })))).slice(0, 5);
+    }
     else {
       const pool = category === "Regular -ERE Verbs" ? ERE : category === "Regular -IRE Verbs" ? IRE : ISC;
       pairs = shuffle(pool).slice(0, 5).map((item) => ({ left: item.infinitive, right: item.english }));
@@ -626,9 +715,11 @@
 
   const LEARN_CARDS = {
     "Regular -ERE Verbs": { title: "Regular -ERE", rule: "Remove -ere and add the ending that matches the subject.", chart: [["io", "-o · vivo"], ["tu", "-i · vivi"], ["lui/lei/Lei", "-e · vive"], ["noi", "-iamo · viviamo"], ["voi", "-ete · vivete"], ["loro", "-ono · vivono"]], examples: ["Io vivo a Venezia.", "Loro leggono molti libri.", "Noi scriviamo una lettera."], mistake: "Do not use the infinitive ending after the subject: noi viviamo, not noi vivere.", tryOne: "Voi ___ a Roma. (vivere)", tryAnswer: "vivete" },
+    "Irregular -ERE Conjugations": { title: "Irregular -ERE", rule: "These forms are assigned irregular course forms. Learn each six-person chart directly instead of applying a made-up regular rule.", chart: [["bere — to drink", "io bevo · tu bevi · lui/lei/Lei beve · noi beviamo · voi bevete · loro bevono"], ["sapere — to know", "io so · tu sai · lui/lei/Lei sa · noi sappiamo · voi sapete · loro sanno"], ["scegliere — to choose", "io scelgo · tu scegli · lui/lei/Lei sceglie · noi scegliamo · voi scegliete · loro scelgono"]], examples: ["Io bevo un caffè.", "Noi sappiamo la risposta.", "Loro scelgono una casa."], mistake: "Do not build these from a regular ending chart. Recall the exact form for the subject, especially so/sai/sa and scelgo.", tryOne: "Loro ___ la risposta. (sapere)", tryAnswer: "sanno", action: { label: "Review meanings →", topic: "Irregular -ERE Verb Vocabulary" } },
     "Regular -IRE Verbs": { title: "Regular -IRE", rule: "Remove -ire and add -o, -i, -e, -iamo, -ite, -ono. Only the VOI ending differs from -ERE.", chart: [["io", "-o · parto"], ["tu", "-i · parti"], ["lui/lei/Lei", "-e · parte"], ["noi", "-iamo · partiamo"], ["voi", "-ite · partite"], ["loro", "-ono · partono"]], examples: ["A che ora parte il treno?", "Noi offriamo il caffè.", "Voi aprite i libri."], mistake: "Use voi partite, not partete. -IRE uses -ite for VOI.", tryOne: "Loro ___ alle otto. (partire)", tryAnswer: "partono" },
     "-IRE + -ISC Verb Vocabulary": { title: "-IRE + -ISC Verb Vocabulary", rule: "Learn what these six verbs mean first. These are -IRE verbs that use the -isc pattern when conjugated.", chart: [["finire", "to finish"], ["capire", "to understand"], ["preferire", "to prefer"], ["pulire", "to clean"], ["restituire", "to return / give back"], ["spedire", "to send"]], examples: ["finire → to finish", "to understand → capire", "spedire → to send"], mistake: "Do not conjugate here—the default vocabulary topic tests infinitive meanings only.", tryOne: "to clean →", tryAnswer: "pulire", action: { label: "Practice conjugations →", topic: "-IRE Verbs with -ISC" } },
     "-IRE Verbs with -ISC": { title: "-IRE Verbs with -ISC", rule: "Add -isc- with IO, TU, LUI/LEI/LEI FORMAL, and LORO. Do not add it with NOI or VOI.", chart: [["io ✓", "finisco"], ["tu ✓", "finisci"], ["lui/lei ✓", "finisce"], ["noi ✗", "finiamo"], ["voi ✗", "finite"], ["loro ✓", "finiscono"]], examples: ["Io capisco.", "Noi capiamo.", "Loro preferiscono la storia."], mistake: "❌ noi finisciamo  ✓ noi finiamo", tryOne: "Loro ___ alle sei. (finire)", tryAnswer: "finiscono", action: { label: "Review meanings →", topic: "-IRE + -ISC Verb Vocabulary" } },
+    "Irregular -IRE Conjugations": { title: "Irregular -IRE", rule: "These four verbs use assigned irregular forms. Memorize each complete six-person chart; no single regular rule produces all of them.", chart: [["dire — to say / tell", "io dico · tu dici · lui/lei/Lei dice · noi diciamo · voi dite · loro dicono"], ["salire — to go up", "io salgo · tu sali · lui/lei/Lei sale · noi saliamo · voi salite · loro salgono"], ["uscire — to go out", "io esco · tu esci · lui/lei/Lei esce · noi usciamo · voi uscite · loro escono"], ["venire — to come", "io vengo · tu vieni · lui/lei/Lei viene · noi veniamo · voi venite · loro vengono"]], examples: ["Io dico la verità.", "Noi saliamo al primo piano.", "Loro vengono con noi."], mistake: "Pattern to notice: vengo / vengono, but vieni / viene, and veniamo / venite. Also watch esco but usciamo, and voi dite.", tryOne: "Loro ___ con noi. (venire)", tryAnswer: "vengono", action: { label: "Review meanings →", topic: "Irregular -IRE Verb Vocabulary" } },
     "Possessive Vocabulary": { title: "Possessive Vocabulary", rule: "The OWNER chooses the possessive family. Then the THING POSSESSED chooses its gender and number. Suo forms also express formal ‘your’ with Lei.", chart: [["io → mio", "my"], ["tu → tuo", "your (informal)"], ["lui/lei/Lei → suo", "his / her · formal your"], ["noi → nostro", "our"], ["voi → vostro", "your (plural)"], ["loro → loro", "their · invariant"]], examples: ["il mio libro — one masculine book", "la mia sedia — one feminine chair", "i miei libri — multiple masculine books", "le mie sedie — multiple feminine chairs", "loro never changes: il loro libro · la loro sedia · i loro amici · le loro lezioni"], mistake: "Do not make loro agree by changing the word. Loro stays the same; only the article changes: il loro, la loro, i loro, le loro.", tryOne: "my — feminine plural →", tryAnswer: "mie", action: { label: "Practice possessives in sentences →", topic: "Possessive Adjectives" } },
     "Possessive Adjectives": { title: "Possessive Adjectives", rule: "The possessive agrees with the THING POSSESSED, not the owner.", chart: [["my", "il mio · la mia · i miei · le mie"], ["your", "il tuo · la tua · i tuoi · le tue"], ["his/her", "il suo · la sua · i suoi · le sue"], ["our", "il nostro · la nostra · i nostri · le nostre"], ["your plural", "il vostro · la vostra · i vostri · le vostre"], ["their", "il loro · la loro · i loro · le loro"]], examples: ["Marco: il suo libro", "Marco: la sua sedia", "Marco: le sue automobili"], mistake: "The owner's gender does not choose mio/mia or suo/sua; the possessed noun does.", tryOne: "Marco ha una sedia: ___ sedia", tryAnswer: "la sua", action: { label: "Review possessive meanings →", topic: "Possessive Vocabulary" } },
     "Possessives with Family Members": { title: "Possessives with Family", rule: "One singular, unmodified family member normally omits the article. Plural, modified, and loro family phrases keep it.", chart: [["singular", "mio padre · mia madre"], ["plural", "i miei genitori · le mie sorelle"], ["modified", "il mio fratello minore"], ["loro", "il loro nipote"]], examples: ["mia sorella", "i tuoi genitori", "il mio fratello minore", "il loro nipote"], mistake: "Do not remove the article from every family phrase. Check number, modifiers, and loro.", tryOne: "___ genitori stanno bene. (my)", tryAnswer: "i miei" },
@@ -652,24 +743,28 @@
     ...FAMILY,
     ...HOUSE,
     ...PREPOSITION_FORMS,
-    ...VERBS.map((item) => ({ ...item, italian: item.infinitive, groups: [item.conjugationType, "verbs"], verbType: item.conjugationType === "ere" ? "-ERE" : item.conjugationType === "ire-regular" ? "regular -IRE" : "-IRE + ISC" })),
+    ...VERBS.map((item) => ({ ...item, italian: item.infinitive, groups: [item.conjugationType, "verbs"], verbType: VERB_FAMILY_LABELS[item.conjugationType] })),
     ...POSSESSIVE_VOCABULARY
   ];
 
   window.UNIT3_DATA = {
     id: "unit3", label: "Unit 3", categories: CATEGORIES, topics: TOPICS, defaultTopics: PRESETS.priority,
     topicGroups: TOPIC_GROUPS, presets: PRESETS, presetLabels: PRESET_LABELS, matchingCategories: MATCHING_CATEGORIES,
-    vocabulary: VOCABULARY, family: FAMILY, verbs: VERBS, ereVerbs: ERE, ireVerbs: IRE, iscVerbs: ISC,
+    vocabulary: VOCABULARY, family: FAMILY, verbs: VERBS, ereVerbs: ERE, irregularEreVerbs: IRREGULAR_ERE,
+    ireVerbs: IRE, iscVerbs: ISC, irregularIreVerbs: IRREGULAR_IRE, irregularVerbs: IRREGULAR_VERBS,
     houseVocabulary: HOUSE, houseRooms: HOUSE_ROOMS, houseFurniture: HOUSE_FURNITURE, houseOther: HOUSE_OTHER,
     basePrepositions: BASE_PREPOSITIONS, articles: ARTICLES, articulatedPrepositions: ARTICULATED_PREPOSITIONS, prepositionForms: PREPOSITION_FORMS,
     possessives: POSSESSIVES, possessiveVocabulary: POSSESSIVE_VOCABULARY, learnCards: LEARN_CARDS, familyTrees: FAMILY_TREES,
     vocabularyFilters: [["all", "All Unit 3"], ["family-core", "Family — Core"], ["family-extended", "Family — Extended"],
-      ["family-relationships", "Family — Relationships"], ["ere", "-ERE Verbs"], ["ire-regular", "Regular -IRE Verbs"],
-      ["ire-isc", "-IRE + -ISC Verbs"], ["possessives", "Possessives"], ["house-rooms", "House — Rooms"],
+      ["family-relationships", "Family — Relationships"], ["ere", "Regular -ERE Verbs"], ["irregular-ere", "Irregular -ERE Verbs"], ["ire-regular", "Regular -IRE Verbs"],
+      ["ire-isc", "-IRE + -ISC Verbs"], ["irregular-ire", "Irregular -IRE Verbs"], ["possessives", "Possessives"], ["house-rooms", "House — Rooms"],
       ["house-furniture", "House — Furniture"], ["house-other", "House — Other"], ["articulated-prepositions", "Articulated Preposition Forms"]],
     prepositionVocabularyFilters: [["all", "All"], ...BASE_PREPOSITIONS.map((base) => [`prep-${base}`, base.toUpperCase()])],
     expandTopics(topics) { return [...new Set(topics.flatMap((topic) => TOPIC_CATEGORY_MAP[topic] || [topic]))].filter((topic) => CATEGORIES.includes(topic)); },
-    migrateTopics(topics) { return [...new Set(topics)].filter((topic) => TOPICS.includes(topic)); },
+    migrateTopics(topics) {
+      return [...new Set(topics.map((topic) => topic === "Mixed -ERE / -IRE Conjugation" ? "Mixed Verb Conjugation" : topic))]
+        .filter((topic) => TOPICS.includes(topic));
+    },
     makeQuestion, makeMatchingQuestion,
     isSourceEligible(category) { return CATEGORIES.includes(category); }
   };
