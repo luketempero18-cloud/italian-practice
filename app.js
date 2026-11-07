@@ -202,10 +202,11 @@
 
   function initSettings() {
     const wrap = $("#topic-groups");
-    wrap.innerHTML = topicGroups().map((group) => `<div class="topic-group"><h3>${escapeHtml(group.name)}</h3><div class="checkbox-grid">${group.topics.map(([topic, note, exam2]) => {
-      const checked = settings.topics.includes(topic) ? "checked" : "";
-      return `<label class="checkbox-option"><input type="checkbox" value="${escapeHtml(topic)}" ${checked}><span>${escapeHtml(topic)}${note ? `<small>${escapeHtml(note)}</small>` : ""}${exam2 ? '<small class="exam-badge">★ Exam 2</small>' : ""}</span></label>`;
-    }).join("")}</div></div>`).join("");
+    if (activeUnit === "unit4") renderUnit4TopicCards();
+    else wrap.innerHTML = topicGroups().map((group) => `<div class="topic-group"><h3>${escapeHtml(group.name)}</h3><div class="checkbox-grid">${group.topics.map(([topic, note, exam2]) => {
+        const checked = settings.topics.includes(topic) ? "checked" : "";
+        return `<label class="checkbox-option"><input type="checkbox" value="${escapeHtml(topic)}" ${checked}><span>${escapeHtml(topic)}${note ? `<small>${escapeHtml(note)}</small>` : ""}${exam2 ? '<small class="exam-badge">★ Exam 2</small>' : ""}</span></label>`;
+      }).join("")}</div></div>`).join("");
     const labels = PRESET_LABELS[activeUnit];
     $("#preset-row").innerHTML = `<span>Quick picks</span>${Object.keys(presets()).map((key) => `<button type="button" class="preset-button ${key === "exam2" ? "exam-preset" : ""}" data-preset="${key}">${escapeHtml(labels[key])}</button>`).join("")}`;
     $("#emphasis").value = settings.emphasis;
@@ -216,6 +217,39 @@
     selectMethod(settings.method, false);
     updateUnitInterface();
     updateTopicCount();
+  }
+
+  function unit4TopicAccuracy(topic) {
+    const totals = topic.categories.reduce((sum, category) => {
+      const stats = progress.categories[category] || { answered: 0, correct: 0 };
+      return { answered: sum.answered + stats.answered, correct: sum.correct + stats.correct };
+    }, { answered: 0, correct: 0 });
+    return totals.answered ? Math.round((totals.correct / totals.answered) * 100) : null;
+  }
+
+  function unit4TopicMistakes(topic) {
+    return Object.values(progress.mistakes).filter((item) => UNIT4.topicForCategory(item.category) === topic.id)
+      .reduce((total, item) => total + Math.max(1, item.misses || 1), 0);
+  }
+
+  function renderUnit4TopicCards() {
+    const wrap = $("#topic-groups");
+    const cards = UNIT4.studyTopics.map((topic) => {
+      const selected = settings.topics.includes(topic.title) ? "checked" : "";
+      const mastery = unit4TopicAccuracy(topic);
+      const mistakes = unit4TopicMistakes(topic);
+      const options = topic.categories.map((category) => `<button type="button" class="unit4-practice-option" data-u4-category="${escapeHtml(category)}" data-u4-topic="${escapeHtml(topic.id)}">${escapeHtml(category)}</button>`).join("");
+      return `<article class="unit4-topic-card ${topic.primary ? "priority" : "culture"}" data-u4-topic-card="${escapeHtml(topic.id)}">
+        <div class="unit4-topic-head"><div><p>${topic.primary ? "Priority topic" : "Low-priority recognition"}</p><h3>${escapeHtml(topic.title)}</h3></div><label class="unit4-mixed-toggle"><input type="checkbox" value="${escapeHtml(topic.title)}" ${selected}><span>Include in mixed</span></label></div>
+        <p class="unit4-topic-summary">${escapeHtml(topic.summary)}</p>
+        <div class="unit4-know"><strong>What to know</strong><span>${escapeHtml(topic.whatToKnow)}</span></div>
+        <div class="unit4-topic-stats"><span><strong>${mastery === null ? "—" : `${mastery}%`}</strong> Mastery</span><span><strong>${mistakes}</strong> Mistakes</span><span><strong>${UNIT4.coreVocabulary.filter((word) => word.groups.includes(topic.vocabFilter)).length}</strong> Core words</span></div>
+        <div class="unit4-topic-actions"><button type="button" data-u4-action="learn" data-u4-topic="${escapeHtml(topic.id)}">Learn</button><button type="button" data-u4-action="practice" data-u4-topic="${escapeHtml(topic.id)}">Practice</button><button type="button" data-u4-action="review" data-u4-topic="${escapeHtml(topic.id)}">Review Words</button><button type="button" data-u4-action="mistakes" data-u4-topic="${escapeHtml(topic.id)}">Mistakes${mistakes ? ` (${mistakes})` : ""}</button></div>
+        <div class="unit4-practice-options hidden" data-u4-options="${escapeHtml(topic.id)}"><strong>Choose what to practice</strong><div>${options}</div></div>
+      </article>`;
+    }).join("");
+    const mixedSelected = settings.topics.includes("Mixed Unit 4") ? "checked" : "";
+    wrap.innerHTML = `<div class="unit4-topic-grid">${cards}</div><article class="unit4-mixed-card"><div><p>Balanced cram session</p><h3>Mixed Unit 4</h3><span>Draws only from the seven ★ priority topics. Culture and hidden later material stay out.</span></div><label class="unit4-mixed-toggle"><input type="checkbox" value="Mixed Unit 4" ${mixedSelected}><span>Include in builder</span></label><div><button type="button" data-u4-action="mixed">Practice Mixed Unit 4</button><button type="button" data-u4-action="review-all">All Unit 4 Core Words</button></div></article>`;
   }
 
   function syncSettings() {
@@ -255,7 +289,9 @@
   function updateTopicCount() {
     const count = settings.topics.length;
     const allCategoriesSelected = currentCategories().every((category) => settings.categories.includes(category));
-    $("#topic-count").textContent = allCategoriesSelected ? "All topics selected" : count ? `${count} ${count === 1 ? "topic" : "topics"} selected` : "No topics selected";
+    $("#topic-count").textContent = activeUnit === "unit4"
+      ? count ? `${count} ${count === 1 ? "topic" : "topics"} included in the session builder` : "Use a topic card action or include topics below"
+      : allCategoriesSelected ? "All topics selected" : count ? `${count} ${count === 1 ? "topic" : "topics"} selected` : "No topics selected";
   }
 
   function updateUnitInterface() {
@@ -268,7 +304,7 @@
     $("#brand-unit-label").textContent = `${unitLabel} study lab`;
     $("#home-unit-label").textContent = unitLabel;
     $("#hero-copy").textContent = activeUnit === "unit4"
-      ? "Learn and practice clothing, weather, sports, reflexive and reciprocal actions, telling time, duration, and Piemonte and Valle d’Aosta culture."
+      ? "Cram Unit 4 as seven connected topics: learn the rule, review its core words, practice it, and revisit only its mistakes."
       : activeUnit === "unit3"
       ? "Learn and practice family and house vocabulary, -ERE and -IRE verbs, -isc patterns, possessives, articulated prepositions, and family-tree reasoning."
       : activeUnit === "unit2" ? "Focused Exam 2 and Unit 2 practice for course vocabulary, adjectives, avere, regular and irregular verbs, listening, and classroom usage."
@@ -355,33 +391,26 @@
       const possessiveGrammarAccuracy = accuracy(progress.skills.possessiveGrammarAccuracy);
       unit3Extra.innerHTML = `<article><strong>${streak}</strong><small>Current streak</small></article><article><strong>${mastered}</strong><small>Terms mastered</small></article><article><strong>${learning}</strong><small>Terms learning</small></article><article><strong>${mistakeCount}</strong><small>Mistakes</small></article><article><strong>${irregularEreVocabulary === null ? "—" : `${irregularEreVocabulary}%`}</strong><small>Irregular -ERE meanings</small></article><article><strong>${irregularEreConjugation === null ? "—" : `${irregularEreConjugation}%`}</strong><small>Irregular -ERE forms</small></article><article><strong>${irregularIreVocabulary === null ? "—" : `${irregularIreVocabulary}%`}</strong><small>Irregular -IRE meanings</small></article><article><strong>${irregularIreConjugation === null ? "—" : `${irregularIreConjugation}%`}</strong><small>Irregular -IRE forms</small></article><article><strong>${iscVocabulary === null ? "—" : `${iscVocabulary}%`}</strong><small>-ISC meanings</small></article><article><strong>${iscConjugation === null ? "—" : `${iscConjugation}%`}</strong><small>-ISC conjugation</small></article><article><strong>${possessiveVocabularyAccuracy === null ? "—" : `${possessiveVocabularyAccuracy}%`}</strong><small>Possessive meanings</small></article><article><strong>${possessiveGrammarAccuracy === null ? "—" : `${possessiveGrammarAccuracy}%`}</strong><small>Possessive grammar</small></article><article><strong>${houseAccuracy === null ? "—" : `${houseAccuracy}%`}</strong><small>House vocabulary</small></article><article><strong>${prepFormAccuracy === null ? "—" : `${prepFormAccuracy}%`}</strong><small>Preposition forms</small></article><article><strong>${prepContextAccuracy === null ? "—" : `${prepContextAccuracy}%`}</strong><small>Prepositions in context</small></article><article><strong>${articleAccuracy === null ? "—" : `${articleAccuracy}%`}</strong><small>Article recognition</small></article><article><strong>${progress.errorTypes.combination_error || 0}</strong><small>Combination errors</small></article><article><strong>${progress.errorTypes.preposition_usage_error || 0}</strong><small>Usage errors</small></article>`;
     } else if (activeUnit === "unit4") {
-      const itemStats = Object.values(progress.items);
+      const itemStats = Object.entries(progress.items).filter(([key]) => UNIT4.categories.some((category) => key.startsWith(`${category}|`))).map(([, item]) => item);
       const mastered = itemStats.filter((item) => item.attempts >= 2 && (item.correct / item.attempts) >= 0.8).length;
       const learning = itemStats.filter((item) => item.attempts > 0 && !(item.attempts >= 2 && (item.correct / item.attempts) >= 0.8)).length;
-      const metricLabels = {
-        clothingVocabularyAccuracy: "Clothing", weatherAccuracy: "Weather + seasons", sportsVocabularyAccuracy: "Sports vocabulary",
-        sportsPrepositionAccuracy: "Sports prepositions", reflexiveVocabularyAccuracy: "Reflexive meanings",
-        reflexivePronounAccuracy: "Reflexive pronouns", reflexiveConjugationAccuracy: "Reflexive forms",
-        reflexiveMeaningAccuracy: "Reflexive meaning", reciprocalVocabularyAccuracy: "Reciprocal meanings",
-        reciprocalConjugationAccuracy: "Reciprocal forms", reciprocalMeaningAccuracy: "Reciprocal meaning",
-        timeAccuracy: "Telling time", atWhatTimeAccuracy: "A che ora?", clock24Accuracy: "12 ↔ 24 hour",
-        durationAccuracy: "Duration", cultureAccuracy: "Culture"
-      };
-      const metricCards = Object.entries(metricLabels).map(([key, label]) => {
-        const value = accuracy(progress.skills[key]);
-        return `<article><strong>${value === null ? "—" : `${value}%`}</strong><small>${label}</small></article>`;
+      const visibleMistakes = Object.values(progress.mistakes).filter((item) => UNIT4.isSourceEligible(item.category, item.sourceId)).length;
+      const metricCards = UNIT4.studyTopics.filter((topic) => topic.primary).map((topic) => {
+        const value = unit4TopicAccuracy(topic);
+        return `<article><strong>${value === null ? "—" : `${value}%`}</strong><small>${escapeHtml(topic.shortTitle)}</small></article>`;
       }).join("");
-      unit3Extra.innerHTML = `<article><strong>${progress.currentStreak || 0}</strong><small>Current streak</small></article><article><strong>${mastered}</strong><small>Terms mastered</small></article><article><strong>${learning}</strong><small>Terms learning</small></article><article><strong>${Object.keys(progress.mistakes).length}</strong><small>Mistakes</small></article>${metricCards}`;
+      unit3Extra.innerHTML = `<article><strong>${progress.currentStreak || 0}</strong><small>Current streak</small></article><article><strong>${mastered}</strong><small>Terms mastered</small></article><article><strong>${learning}</strong><small>Terms learning</small></article><article><strong>${visibleMistakes}</strong><small>Mistakes</small></article>${metricCards}`;
+      if ($("#topic-groups")?.querySelector("[data-u4-topic-card]")) renderUnit4TopicCards();
     }
 
-    const mistakes = Object.values(progress.mistakes).reduce((total, item) => total + Math.max(1, item.misses || 1), 0);
+    const mistakeItems = Object.values(progress.mistakes).filter((item) => activeUnit !== "unit4" || UNIT4.isSourceEligible(item.category, item.sourceId));
+    const mistakes = mistakeItems.reduce((total, item) => total + Math.max(1, item.misses || 1), 0);
     $("#mistake-count-label").textContent = mistakes ? `${mistakes} review ${mistakes === 1 ? "item" : "items"} ready` : "No mistakes waiting";
 
-    const attempted = Object.entries(progress.categories)
-      .filter(([, stats]) => stats.answered > 0)
-      .map(([category, stats]) => ({ category, value: accuracy(stats) }))
-      .sort((a, b) => a.value - b.value)
-      .slice(0, 6);
+    const attempted = (activeUnit === "unit4" ? UNIT4.studyTopics.filter((topic) => topic.primary)
+      .map((topic) => ({ category: topic.shortTitle, value: unit4TopicAccuracy(topic) })).filter((item) => item.value !== null)
+      : Object.entries(progress.categories).filter(([, stats]) => stats.answered > 0).map(([category, stats]) => ({ category, value: accuracy(stats) })))
+      .sort((a, b) => a.value - b.value).slice(0, 6);
     const wrap = $("#weak-areas");
     if (!attempted.length) {
       wrap.innerHTML = '<p class="empty-progress">Complete a few questions and your weakest topics will appear here.</p>';
@@ -591,7 +620,9 @@
   }
 
   function vocabularyEntries() {
-    if (studyModule()) return studyModule().vocabulary.map((entry) => ({ ...entry, variants: [] }));
+    if (studyModule()) return studyModule().vocabulary
+      .filter((entry) => activeUnit !== "unit4" || entry.activeForCurrentStudy !== false)
+      .map((entry) => ({ ...entry, variants: [] }));
     const grouped = new Map();
     DATA.nouns.forEach((noun) => {
       const key = lexicalKey(noun.singular);
@@ -691,9 +722,9 @@
     }));
   }
 
-  function openVocabulary() {
+  function openVocabulary(filter = "all") {
     session = null;
-    vocabularyFilter = "all";
+    vocabularyFilter = filter;
     prepositionVocabularyFilter = "all";
     $("#vocabulary-search").value = "";
     renderVocabulary(new Set());
@@ -721,9 +752,9 @@
     });
   }
 
-  function openLearn() {
+  function openLearn(key = learnCardKey) {
     session = null;
-    renderLearnCard();
+    renderLearnCard(key);
     showView("learn");
   }
 
@@ -831,9 +862,9 @@
     return matchingCategories.includes(category) && (category !== "Numbers" || numberRange === "basic");
   }
 
-  function startSession(mode) {
+  function startSession(mode, categoryOverride = null, topicOverride = null) {
     syncSettings();
-    const selectedCategories = settings.categories.length ? [...settings.categories] : (mode === "mistakes" ? [...currentCategories()] : []);
+    const selectedCategories = categoryOverride?.length ? [...categoryOverride] : settings.categories.length ? [...settings.categories] : (mode === "mistakes" ? [...currentCategories()] : []);
     if (mode !== "mistakes" && !selectedCategories.length) {
       showBuilderMessage("Choose at least one topic before starting practice.");
       $("#topic-heading").scrollIntoView({ behavior: "smooth", block: "center" });
@@ -864,7 +895,7 @@
     }
     session = {
       mode,
-      topics: mode === "mistakes" && !settings.topics.length ? ["All mistake topics"] : [...settings.topics],
+      topics: topicOverride?.length ? [...topicOverride] : mode === "mistakes" && !settings.topics.length ? ["All mistake topics"] : [...settings.topics],
       categories: selectedCategories,
       limit: settings.count === "unlimited" ? Infinity : Number(settings.count),
       answered: 0,
@@ -891,9 +922,8 @@
       "Avere Expressions", "Days / Agenda Vocabulary", "Core Family Vocabulary", "Extended Family Vocabulary",
       "Family Relationships / Status", "-ERE Verb Vocabulary", "-IRE Verb Vocabulary", "-IRE + -ISC Verb Vocabulary",
       "House — Rooms", "House — Furniture", "House — Other", "Articulated Preposition Forms",
-      "Clothing", "Weather", "Seasons", "Sports", "Sports Equipment", "Reflexive Verb Vocabulary",
-      "Reciprocal Verb Vocabulary", "Daily Routine Vocabulary", "Time Vocabulary", "Duration Vocabulary",
-      "Culture — Piemonte & Valle d’Aosta"
+      "Reflexive Meanings", "Modal Meanings", "Place Vocabulary", "Directions", "Location Words", "Weather Vocabulary",
+      "Season Vocabulary", "Clothing Vocabulary", "Reciprocal Meanings", "Sports Vocabulary"
     ].includes(category) || category.startsWith("Verb Vocabulary"));
     $("#session-direction-wrap").classList.toggle("hidden", !hasVocabularyTranslations);
     $("#session-direction").textContent = directionLabels[session.vocabularyDirection];
@@ -941,7 +971,7 @@
     if (settings.emphasis === "weak" && value !== null) weight *= 1 + ((100 - value) / 35);
     if (activeUnit === "unit1" && CORE_CATEGORIES.includes(category)) weight *= 1.35;
     if (activeUnit === "unit3" && category === "House — Other") weight *= 0.65;
-    if (activeUnit === "unit4" && category === "Culture — Piemonte & Valle d’Aosta") weight *= 0.55;
+    if (activeUnit === "unit4" && category === "Culture Quick Recognition") weight *= 0.4;
     return weight;
   }
 
@@ -1868,6 +1898,24 @@
     showView("last-minute-results");
   }
 
+  function handleUnit4TopicAction(button) {
+    const action = button.dataset.u4Action;
+    if (action === "mixed") return startSession(settings.method, ["Mixed Unit 4"], ["Mixed Unit 4"]);
+    if (action === "review-all") return openVocabulary("all");
+    const topic = UNIT4.studyTopics.find((item) => item.id === button.dataset.u4Topic);
+    if (!topic) return;
+    if (action === "learn") return openLearn(topic.learnCard);
+    if (action === "review") return openVocabulary(topic.vocabFilter);
+    if (action === "mistakes") return startSession("mistakes", topic.categories, [topic.title]);
+    if (action === "practice") {
+      const options = $(`[data-u4-options="${CSS.escape(topic.id)}"]`);
+      const opening = options.classList.contains("hidden");
+      $$("[data-u4-options]").forEach((panel) => panel.classList.add("hidden"));
+      options.classList.toggle("hidden", !opening);
+      button.setAttribute("aria-expanded", String(opening));
+    }
+  }
+
   function bindEvents() {
     $$('[data-unit]').forEach((button) => button.addEventListener("click", () => switchUnit(button.dataset.unit)));
     $$("[data-mode]").forEach((button) => button.addEventListener("click", () => startSession(button.dataset.mode)));
@@ -1880,7 +1928,7 @@
     $("#summary-home").addEventListener("click", goHome);
     $("#practice-again").addEventListener("click", () => startSession(session?.mode || "mixed"));
     $("#open-practice-test").addEventListener("click", () => startPracticeTest());
-    $("#open-learn").addEventListener("click", openLearn);
+    $("#open-learn").addEventListener("click", () => openLearn());
     $("#learn-home").addEventListener("click", goHome);
     $("#learn-tabs").addEventListener("click", (event) => {
       const button = event.target.closest("[data-learn-card]");
@@ -1909,7 +1957,7 @@
     $("#practice-test-home").addEventListener("click", goHome);
     $("#practice-test-form").addEventListener("submit", (event) => event.preventDefault());
     $("#submit-practice-test").addEventListener("click", submitPracticeTest);
-    $("#view-vocabulary").addEventListener("click", openVocabulary);
+    $("#view-vocabulary").addEventListener("click", () => openVocabulary());
     $("#vocabulary-home").addEventListener("click", goHome);
     $("#vocabulary-search").addEventListener("input", () => renderVocabulary(new Set()));
     $("#vocabulary-sort").addEventListener("change", () => renderVocabulary(new Set()));
@@ -1950,6 +1998,14 @@
       if (!event.target.matches("input")) return;
       $$("#topic-groups input").filter((input) => input.value === event.target.value).forEach((input) => { input.checked = event.target.checked; });
       syncSettings();
+    });
+    $("#topic-groups").addEventListener("click", (event) => {
+      const action = event.target.closest("[data-u4-action]");
+      if (action && activeUnit === "unit4") return handleUnit4TopicAction(action);
+      const practice = event.target.closest("[data-u4-category]");
+      if (!practice || activeUnit !== "unit4") return;
+      const topic = UNIT4.studyTopics.find((item) => item.id === practice.dataset.u4Topic);
+      startSession(settings.method, [practice.dataset.u4Category], [topic?.title || practice.dataset.u4Category]);
     });
     $$("#emphasis, #question-count, #strictness, #number-range, #vocabulary-direction").forEach((control) => control.addEventListener("change", syncSettings));
     document.addEventListener("keydown", (event) => {

@@ -71,6 +71,31 @@ h2 { font-size: 30px; line-height: 1.15; }
 .topic-group .checkbox-option { min-height: 42px; }
 .topic-group .checkbox-option span { display: grid; }
 .topic-group .checkbox-option small { color: var(--muted); font-size: 10px; }
+.unit4-topic-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.unit4-topic-card { position: relative; min-width: 0; padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: white; box-shadow: 0 8px 24px rgba(31,44,42,.04); }
+.unit4-topic-card.priority { border-top: 4px solid var(--green); }
+.unit4-topic-card.culture { border-top: 4px solid var(--gold); background: #fffdf7; }
+.unit4-topic-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.unit4-topic-head p, .unit4-mixed-card p { margin: 0 0 4px; color: var(--green); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.unit4-topic-card.culture .unit4-topic-head p { color: #8d641f; }
+.unit4-topic-head h3, .unit4-mixed-card h3 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 22px; line-height: 1.1; }
+.unit4-mixed-toggle { display: grid; grid-template-columns: auto 1fr; gap: 6px; align-items: center; flex: 0 0 auto; color: var(--muted); font-size: 10px; font-weight: 700; }
+.unit4-mixed-toggle input { accent-color: var(--green); }
+.unit4-topic-summary { min-height: 42px; margin: 13px 0; color: var(--muted); font-size: 13px; }
+.unit4-know { display: grid; gap: 3px; padding: 11px 12px; border-radius: 10px; background: #f5f8f5; font-size: 12px; }
+.unit4-know strong { color: var(--green); font-size: 10px; letter-spacing: .07em; text-transform: uppercase; }
+.unit4-topic-stats { display: flex; flex-wrap: wrap; gap: 12px; margin: 14px 0; color: var(--muted); font-size: 11px; }
+.unit4-topic-stats strong { color: var(--ink); font-size: 13px; }
+.unit4-topic-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
+.unit4-topic-actions button, .unit4-practice-option, .unit4-mixed-card button { min-height: 36px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: white; cursor: pointer; font-size: 11px; font-weight: 750; }
+.unit4-topic-actions button:hover, .unit4-practice-option:hover, .unit4-mixed-card button:hover { border-color: #9eb9ac; color: var(--green); background: var(--green-soft); }
+.unit4-practice-options { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.unit4-practice-options > strong { display: block; margin-bottom: 8px; font-size: 11px; }
+.unit4-practice-options > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.unit4-practice-option { min-height: 32px; border-radius: 999px; }
+.unit4-mixed-card { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; margin-top: 14px; padding: 22px; border: 1px solid #b8d2c6; border-radius: 18px; background: var(--green-soft); }
+.unit4-mixed-card > div:last-child { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; grid-column: 1 / -1; }
+.unit4-mixed-card span { color: var(--muted); font-size: 12px; }
 .exam-badge { display: inline-flex; width: fit-content; margin-top: 3px; padding: 2px 6px; border-radius: 999px; color: #765212; background: #fff0c7; font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .preset-row { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
 .preset-row > span { margin-right: 3px; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
@@ -413,6 +438,12 @@ footer { display: flex; justify-content: space-between; gap: 20px; padding: 34px
   .mode-grid, .stat-grid, .settings-row { grid-template-columns: 1fr; }
   .topic-builder { padding: 26px 20px; }
   .topic-groups { grid-template-columns: 1fr; }
+  .unit4-topic-grid { grid-template-columns: 1fr; }
+  .unit4-topic-head, .unit4-mixed-card { grid-template-columns: 1fr; }
+  .unit4-topic-head { flex-direction: column; }
+  .unit4-topic-summary { min-height: 0; }
+  .unit4-mixed-card > div:last-child { justify-content: stretch; }
+  .unit4-mixed-card button { flex: 1 1 100%; }
   .number-range-control { align-items: stretch; flex-direction: column; }
   .number-range-control select { width: 100%; }
   .start-practice-row { align-items: stretch; flex-direction: column; }
