@@ -4,9 +4,11 @@
   const DATA = window.STUDY_DATA;
   const UNIT2 = window.UNIT2_DATA;
   const UNIT3 = window.UNIT3_DATA;
+  const UNIT4 = window.UNIT4_DATA;
   const TEST = window.PRACTICE_TEST;
   const UNIT2_TEST = window.UNIT2_PRACTICE_TEST;
   const UNIT3_TEST = window.UNIT3_PRACTICE_TEST;
+  const UNIT4_TEST = window.UNIT4_PRACTICE_TEST;
   const LAST_MINUTE = window.LAST_MINUTE_STUDY;
   const STORAGE_KEY = "italianPractice.v1";
   const SETTINGS_KEY = "italianPractice.settings.v1";
@@ -14,10 +16,13 @@
   const UNIT2_SETTINGS_KEY = "italianPractice.settings.unit2.v1";
   const UNIT3_STORAGE_KEY = "italianPractice.unit3.v1";
   const UNIT3_SETTINGS_KEY = "italianPractice.settings.unit3.v1";
+  const UNIT4_STORAGE_KEY = "italianPractice.unit4.v1";
+  const UNIT4_SETTINGS_KEY = "italianPractice.settings.unit4.v1";
   const ACTIVE_UNIT_KEY = "italianPractice.activeUnit.v1";
   const VOCABULARY_DIRECTION_KEY = "italianPractice.vocabularyDirection.v1";
   const UNIT2_TEST_ATTEMPTS_KEY = "italianPractice.unit2PracticeExam.v1";
   const UNIT3_TEST_ATTEMPTS_KEY = "italianPractice.unit3PracticeTest.v1";
+  const UNIT4_TEST_ATTEMPTS_KEY = "italianPractice.unit4PracticeTest.v1";
   const CORE_CATEGORIES = [
     "Definite Articles", "Indefinite Articles", "Gender", "Singular → Plural",
     "Plural → Singular", "Full Transformation"
@@ -62,7 +67,8 @@
   const PRESET_LABELS = {
     unit1: { articles: "Articles + Gender", plurals: "Singular + Plural", nouns: "Noun Grammar", verbs: "Verbs", everything: "Everything" },
     unit2: UNIT2.presetLabels,
-    unit3: UNIT3.presetLabels
+    unit3: UNIT3.presetLabels,
+    unit4: UNIT4.presetLabels
   };
   const METHOD_LABELS = { mc: "Multiple Choice", typed: "Written", matching: "Matching", mixed: "Mixed", mistakes: "Mistakes Only" };
   const NOUN_CATEGORIES = [
@@ -101,27 +107,31 @@
   }
 
   function progressKey(unit = activeUnit) {
-    return unit === "unit3" ? UNIT3_STORAGE_KEY : unit === "unit2" ? UNIT2_STORAGE_KEY : STORAGE_KEY;
+    return unit === "unit4" ? UNIT4_STORAGE_KEY : unit === "unit3" ? UNIT3_STORAGE_KEY : unit === "unit2" ? UNIT2_STORAGE_KEY : STORAGE_KEY;
   }
 
   function settingsKey(unit = activeUnit) {
-    return unit === "unit3" ? UNIT3_SETTINGS_KEY : unit === "unit2" ? UNIT2_SETTINGS_KEY : SETTINGS_KEY;
+    return unit === "unit4" ? UNIT4_SETTINGS_KEY : unit === "unit3" ? UNIT3_SETTINGS_KEY : unit === "unit2" ? UNIT2_SETTINGS_KEY : SETTINGS_KEY;
+  }
+
+  function studyModule(unit = activeUnit) {
+    return unit === "unit4" ? UNIT4 : unit === "unit3" ? UNIT3 : unit === "unit2" ? UNIT2 : null;
   }
 
   function topicGroups(unit = activeUnit) {
-    return unit === "unit3" ? UNIT3.topicGroups : unit === "unit2" ? UNIT2.topicGroups : UNIT1_TOPIC_GROUPS;
+    return studyModule(unit)?.topicGroups || UNIT1_TOPIC_GROUPS;
   }
 
   function allTopics(unit = activeUnit) {
-    return unit === "unit3" ? UNIT3.topics : unit === "unit2" ? UNIT2.topics : UNIT1_ALL_TOPICS;
+    return studyModule(unit)?.topics || UNIT1_ALL_TOPICS;
   }
 
   function presets(unit = activeUnit) {
-    return unit === "unit3" ? UNIT3.presets : unit === "unit2" ? UNIT2.presets : UNIT1_PRESETS;
+    return studyModule(unit)?.presets || UNIT1_PRESETS;
   }
 
   function currentCategories(unit = activeUnit) {
-    return unit === "unit3" ? UNIT3.categories : unit === "unit2" ? UNIT2.categories : DATA.categories;
+    return studyModule(unit)?.categories || DATA.categories;
   }
 
   function loadProgress(unit = activeUnit) {
@@ -138,10 +148,11 @@
     return clean;
   }
 
-  let activeUnit = ["unit1", "unit2", "unit3"].includes(localStorage.getItem(ACTIVE_UNIT_KEY)) ? localStorage.getItem(ACTIVE_UNIT_KEY) : "unit1";
+  let activeUnit = ["unit1", "unit2", "unit3", "unit4"].includes(localStorage.getItem(ACTIVE_UNIT_KEY)) ? localStorage.getItem(ACTIVE_UNIT_KEY) : "unit1";
 
   function defaultSettings(unit = activeUnit) {
-    const topics = unit === "unit3" ? [...(UNIT3.defaultTopics || UNIT3.topics)] : unit === "unit2" ? [...(UNIT2.defaultTopics || UNIT2.topics)] : [...DATA.categories];
+    const module = studyModule(unit);
+    const topics = module ? [...(module.defaultTopics || module.topics)] : [...DATA.categories];
     return { topics, categories: expandTopics(topics, unit), method: "mixed", emphasis: "balanced", count: "20", strictness: "normal", numberRange: "mixed", vocabularyDirection: "mixed" };
   }
 
@@ -150,7 +161,7 @@
     const stored = loadJSON(settingsKey(unit), {});
     const loaded = { ...defaults, ...stored };
     const savedTopics = Array.isArray(stored.topics) ? stored.topics : (Array.isArray(stored.categories) ? stored.categories : defaults.topics);
-    loaded.topics = unit === "unit3" ? UNIT3.migrateTopics(savedTopics) : unit === "unit2" ? UNIT2.migrateTopics(savedTopics) : savedTopics.filter((topic) => allTopics(unit).includes(topic));
+    loaded.topics = studyModule(unit) ? studyModule(unit).migrateTopics(savedTopics) : savedTopics.filter((topic) => allTopics(unit).includes(topic));
     loaded.categories = expandTopics(loaded.topics, unit);
     if (!METHOD_LABELS[loaded.method] || loaded.method === "mistakes") loaded.method = "mixed";
     if (![...Object.keys(NUMBER_RANGES), "mixed"].includes(loaded.numberRange)) loaded.numberRange = "mixed";
@@ -184,8 +195,7 @@
   }
 
   function expandTopics(topics, unit = activeUnit) {
-    if (unit === "unit3") return UNIT3.expandTopics(topics);
-    if (unit === "unit2") return UNIT2.expandTopics(topics);
+    if (studyModule(unit)) return studyModule(unit).expandTopics(topics);
     const expanded = topics.flatMap((topic) => topic === MIXED_NOUN_TOPIC ? CORE_CATEGORIES : [topic]);
     return [...new Set(expanded)].filter((category) => DATA.categories.includes(category));
   }
@@ -249,7 +259,7 @@
   }
 
   function updateUnitInterface() {
-    const unitLabel = activeUnit === "unit3" ? "Unit 3" : activeUnit === "unit2" ? "Unit 2" : "Unit 1";
+    const unitLabel = activeUnit === "unit4" ? "Unit 4" : activeUnit === "unit3" ? "Unit 3" : activeUnit === "unit2" ? "Unit 2" : "Unit 1";
     $$('[data-unit]').forEach((button) => {
       const selected = button.dataset.unit === activeUnit;
       button.classList.toggle("selected", selected);
@@ -257,7 +267,9 @@
     });
     $("#brand-unit-label").textContent = `${unitLabel} study lab`;
     $("#home-unit-label").textContent = unitLabel;
-    $("#hero-copy").textContent = activeUnit === "unit3"
+    $("#hero-copy").textContent = activeUnit === "unit4"
+      ? "Learn and practice clothing, weather, sports, reflexive and reciprocal actions, telling time, duration, and Piemonte and Valle d’Aosta culture."
+      : activeUnit === "unit3"
       ? "Learn and practice family and house vocabulary, -ERE and -IRE verbs, -isc patterns, possessives, articulated prepositions, and family-tree reasoning."
       : activeUnit === "unit2" ? "Focused Exam 2 and Unit 2 practice for course vocabulary, adjectives, avere, regular and irregular verbs, listening, and classroom usage."
         : "Fast, focused repetition for articles, gender, and plural forms—with your weak areas brought back at the right time.";
@@ -267,15 +279,19 @@
     $("#emphasis-control").classList.toggle("hidden", activeUnit !== "unit1");
     $("#open-classroom-picture").classList.toggle("hidden", activeUnit !== "unit2");
     $("#open-last-minute").classList.toggle("hidden", activeUnit !== "unit2");
-    $("#open-learn").classList.toggle("hidden", activeUnit !== "unit3");
+    $("#open-learn").classList.toggle("hidden", !["unit3", "unit4"].includes(activeUnit));
+    $("#open-learn").textContent = activeUnit === "unit4" ? "Learn Unit 4" : "Learn Unit 3";
     $("#open-family-tree").classList.toggle("hidden", activeUnit !== "unit3");
+    $("#learn-unit-label").textContent = `${unitLabel} · Learn before practice`;
+    $("#learn-title").textContent = `Learn ${unitLabel} Grammar`;
+    $("#learn-tabs").setAttribute("aria-label", `${unitLabel} grammar lessons`);
     const testButton = $("#open-practice-test");
     testButton.disabled = false;
-    testButton.textContent = activeUnit === "unit3" ? "Unit 3 Practice Test" : activeUnit === "unit2" ? "★ Practice Exam 2" : "Practice Test";
+    testButton.textContent = activeUnit === "unit4" ? "Unit 4 Practice Test" : activeUnit === "unit3" ? "Unit 3 Practice Test" : activeUnit === "unit2" ? "★ Practice Exam 2" : "Practice Test";
   }
 
   function switchUnit(nextUnit) {
-    if (nextUnit === activeUnit || !["unit1", "unit2", "unit3"].includes(nextUnit)) return;
+    if (nextUnit === activeUnit || !["unit1", "unit2", "unit3", "unit4"].includes(nextUnit)) return;
     if ((session || practiceTestSession || lastMinuteSession) && !window.confirm("Changing units will end the current study session. Continue?")) return;
     clearTimeout(lastMinuteTimer);
     window.speechSynthesis?.cancel();
@@ -318,7 +334,7 @@
     $("#stat-accuracy").textContent = today.answered ? `${accuracy(today)}%` : "—";
 
     const unit3Extra = $("#unit3-dashboard-extra");
-    unit3Extra.classList.toggle("hidden", activeUnit !== "unit3");
+    unit3Extra.classList.toggle("hidden", !["unit3", "unit4"].includes(activeUnit));
     if (activeUnit === "unit3") {
       const itemStats = Object.values(progress.items);
       const mastered = itemStats.filter((item) => item.attempts >= 2 && (item.correct / item.attempts) >= 0.8).length;
@@ -338,6 +354,24 @@
       const possessiveVocabularyAccuracy = accuracy(progress.skills.possessiveVocabularyAccuracy);
       const possessiveGrammarAccuracy = accuracy(progress.skills.possessiveGrammarAccuracy);
       unit3Extra.innerHTML = `<article><strong>${streak}</strong><small>Current streak</small></article><article><strong>${mastered}</strong><small>Terms mastered</small></article><article><strong>${learning}</strong><small>Terms learning</small></article><article><strong>${mistakeCount}</strong><small>Mistakes</small></article><article><strong>${irregularEreVocabulary === null ? "—" : `${irregularEreVocabulary}%`}</strong><small>Irregular -ERE meanings</small></article><article><strong>${irregularEreConjugation === null ? "—" : `${irregularEreConjugation}%`}</strong><small>Irregular -ERE forms</small></article><article><strong>${irregularIreVocabulary === null ? "—" : `${irregularIreVocabulary}%`}</strong><small>Irregular -IRE meanings</small></article><article><strong>${irregularIreConjugation === null ? "—" : `${irregularIreConjugation}%`}</strong><small>Irregular -IRE forms</small></article><article><strong>${iscVocabulary === null ? "—" : `${iscVocabulary}%`}</strong><small>-ISC meanings</small></article><article><strong>${iscConjugation === null ? "—" : `${iscConjugation}%`}</strong><small>-ISC conjugation</small></article><article><strong>${possessiveVocabularyAccuracy === null ? "—" : `${possessiveVocabularyAccuracy}%`}</strong><small>Possessive meanings</small></article><article><strong>${possessiveGrammarAccuracy === null ? "—" : `${possessiveGrammarAccuracy}%`}</strong><small>Possessive grammar</small></article><article><strong>${houseAccuracy === null ? "—" : `${houseAccuracy}%`}</strong><small>House vocabulary</small></article><article><strong>${prepFormAccuracy === null ? "—" : `${prepFormAccuracy}%`}</strong><small>Preposition forms</small></article><article><strong>${prepContextAccuracy === null ? "—" : `${prepContextAccuracy}%`}</strong><small>Prepositions in context</small></article><article><strong>${articleAccuracy === null ? "—" : `${articleAccuracy}%`}</strong><small>Article recognition</small></article><article><strong>${progress.errorTypes.combination_error || 0}</strong><small>Combination errors</small></article><article><strong>${progress.errorTypes.preposition_usage_error || 0}</strong><small>Usage errors</small></article>`;
+    } else if (activeUnit === "unit4") {
+      const itemStats = Object.values(progress.items);
+      const mastered = itemStats.filter((item) => item.attempts >= 2 && (item.correct / item.attempts) >= 0.8).length;
+      const learning = itemStats.filter((item) => item.attempts > 0 && !(item.attempts >= 2 && (item.correct / item.attempts) >= 0.8)).length;
+      const metricLabels = {
+        clothingVocabularyAccuracy: "Clothing", weatherAccuracy: "Weather + seasons", sportsVocabularyAccuracy: "Sports vocabulary",
+        sportsPrepositionAccuracy: "Sports prepositions", reflexiveVocabularyAccuracy: "Reflexive meanings",
+        reflexivePronounAccuracy: "Reflexive pronouns", reflexiveConjugationAccuracy: "Reflexive forms",
+        reflexiveMeaningAccuracy: "Reflexive meaning", reciprocalVocabularyAccuracy: "Reciprocal meanings",
+        reciprocalConjugationAccuracy: "Reciprocal forms", reciprocalMeaningAccuracy: "Reciprocal meaning",
+        timeAccuracy: "Telling time", atWhatTimeAccuracy: "A che ora?", clock24Accuracy: "12 ↔ 24 hour",
+        durationAccuracy: "Duration", cultureAccuracy: "Culture"
+      };
+      const metricCards = Object.entries(metricLabels).map(([key, label]) => {
+        const value = accuracy(progress.skills[key]);
+        return `<article><strong>${value === null ? "—" : `${value}%`}</strong><small>${label}</small></article>`;
+      }).join("");
+      unit3Extra.innerHTML = `<article><strong>${progress.currentStreak || 0}</strong><small>Current streak</small></article><article><strong>${mastered}</strong><small>Terms mastered</small></article><article><strong>${learning}</strong><small>Terms learning</small></article><article><strong>${Object.keys(progress.mistakes).length}</strong><small>Mistakes</small></article>${metricCards}`;
     }
 
     const mistakes = Object.values(progress.mistakes).reduce((total, item) => total + Math.max(1, item.misses || 1), 0);
@@ -389,7 +423,7 @@
   function renderPracticeTest() {
     const test = practiceTestSession.test;
     const questionCount = practiceTestQuestionCount();
-    $("#practice-test-unit-label").textContent = test.unit === "unit3" ? "Unit 3 · Practice Test" : test.unit === "unit2" ? "Unit 2 · Exam simulation" : "Unit 1";
+    $("#practice-test-unit-label").textContent = test.unit === "unit4" ? "Unit 4 · Practice Test" : test.unit === "unit3" ? "Unit 3 · Practice Test" : test.unit === "unit2" ? "Unit 2 · Exam simulation" : "Unit 1";
     $("#practice-test-title").textContent = test.title;
     $("#practice-test-total").textContent = `${test.totalPoints || questionCount} points total`;
     $("#submit-practice-test").textContent = test.unit === "unit2" ? "Submit Practice Exam" : "Submit Practice Test";
@@ -447,8 +481,8 @@
 
   function startPracticeTest(previousSignature = "") {
     session = null;
-    const module = activeUnit === "unit3" ? UNIT3_TEST : activeUnit === "unit2" ? UNIT2_TEST : TEST;
-    const test = activeUnit === "unit3" ? module.generateTest(UNIT3, previousSignature) : activeUnit === "unit2" ? module.generateTest(UNIT2, previousSignature) : module.generateTest(DATA, previousSignature);
+    const module = activeUnit === "unit4" ? UNIT4_TEST : activeUnit === "unit3" ? UNIT3_TEST : activeUnit === "unit2" ? UNIT2_TEST : TEST;
+    const test = studyModule() ? module.generateTest(studyModule(), previousSignature) : module.generateTest(DATA, previousSignature);
     practiceTestSession = { test, module, unit: activeUnit, submitted: false };
     renderPracticeTest();
     showView("practice-test");
@@ -485,6 +519,14 @@
     localStorage.setItem(UNIT3_TEST_ATTEMPTS_KEY, JSON.stringify(attempts.slice(0, 30)));
   }
 
+  function saveUnit4PracticeAttempt(grade) {
+    const attempts = loadJSON(UNIT4_TEST_ATTEMPTS_KEY, []);
+    attempts.unshift({ createdAt: practiceTestSession.test.createdAt, submittedAt: Date.now(), signature: practiceTestSession.test.signature,
+      score: grade.score, total: grade.total, percentage: grade.percentage,
+      sections: Object.fromEntries(Object.entries(grade.sectionScores).map(([id, value]) => [id, { correct: value.correct, total: value.total }])) });
+    localStorage.setItem(UNIT4_TEST_ATTEMPTS_KEY, JSON.stringify(attempts.slice(0, 30)));
+  }
+
   function addUnit2ExamMistakes(grade) {
     grade.results.filter((result) => !result.correct && UNIT2.categories.includes(result.category)).forEach((result) => {
       const key = `${result.category}:${result.id}`;
@@ -496,6 +538,15 @@
 
   function addUnit3TestMistakes(grade) {
     grade.results.filter((result) => !result.correct && UNIT3.categories.includes(result.category)).forEach((result) => {
+      const key = `${result.category}|${result.id}`;
+      progress.mistakes[key] = { key, category: result.category, sourceId: result.sourceId || result.id, label: result.label,
+        misses: (progress.mistakes[key]?.misses || 0) + 1, streak: 0, lastMiss: Date.now(), fromPracticeTest: true };
+    });
+    saveProgress();
+  }
+
+  function addUnit4TestMistakes(grade) {
+    grade.results.filter((result) => !result.correct && UNIT4.categories.includes(result.category)).forEach((result) => {
       const key = `${result.category}|${result.id}`;
       progress.mistakes[key] = { key, category: result.category, sourceId: result.sourceId || result.id, label: result.label,
         misses: (progress.mistakes[key]?.misses || 0) + 1, streak: 0, lastMiss: Date.now(), fromPracticeTest: true };
@@ -520,7 +571,7 @@
     const missedHtml = missed.length ? missed.map((result) => `<article><strong>${escapeHtml(result.sectionTitle)}</strong><p>${escapeHtml(result.label)}</p><span>Your answer: ${escapeHtml(result.studentAnswer || "Unanswered")}</span><span>Correct answer: ${escapeHtml(result.answer)}</span><small>${escapeHtml(result.explanation)}</small></article>`).join("") : '<p class="perfect-test">Perfect score—every answer is correct.</p>';
     const reviewTopics = grade.reviewTopics?.length ? `<div class="practice-test-topics"><h2>Topics to review</h2><div>${grade.reviewTopics.map((topic) => `<span>${escapeHtml(topic.title)} · ${Math.round(topic.percentage)}%</span>`).join("")}</div></div>` : "";
     const results = $("#practice-test-results");
-    results.innerHTML = `<div class="practice-test-complete"><span class="summary-mark" aria-hidden="true">✓</span><p class="eyebrow">${practiceTestSession.unit === "unit2" ? "Practice Exam 2 Complete" : practiceTestSession.unit === "unit3" ? "Unit 3 Practice Test Complete" : "Practice Test Complete"}</p><h2>Score: ${grade.score} / ${grade.total}</h2><strong>Percentage: ${grade.percentage.toFixed(1)}%</strong></div><div class="practice-test-section-scores">${sectionScores}</div>${reviewTopics}<div class="practice-test-review"><h2>${missed.length ? "Review missed questions" : "Ben fatto!"}</h2>${missedHtml}</div><div class="practice-test-result-actions"><button id="generate-new-test" class="primary-button" type="button">${practiceTestSession.unit === "unit2" ? "Retake With New Questions" : "Generate New Test"}</button><button id="practice-test-results-home" class="secondary-button" type="button">Back to home</button></div>`;
+    results.innerHTML = `<div class="practice-test-complete"><span class="summary-mark" aria-hidden="true">✓</span><p class="eyebrow">${practiceTestSession.unit === "unit2" ? "Practice Exam 2 Complete" : practiceTestSession.unit === "unit4" ? "Unit 4 Practice Test Complete" : practiceTestSession.unit === "unit3" ? "Unit 3 Practice Test Complete" : "Practice Test Complete"}</p><h2>Score: ${grade.score} / ${grade.total}</h2><strong>Percentage: ${grade.percentage.toFixed(1)}%</strong></div><div class="practice-test-section-scores">${sectionScores}</div>${reviewTopics}<div class="practice-test-review"><h2>${missed.length ? "Review missed questions" : "Ben fatto!"}</h2>${missedHtml}</div><div class="practice-test-result-actions"><button id="generate-new-test" class="primary-button" type="button">${practiceTestSession.unit === "unit2" ? "Retake With New Questions" : "Generate New Test"}</button><button id="practice-test-results-home" class="secondary-button" type="button">Back to home</button></div>`;
     if (practiceTestSession.unit === "unit2") {
       saveUnit2PracticeAttempt(grade);
       addUnit2ExamMistakes(grade);
@@ -529,6 +580,9 @@
     } else if (practiceTestSession.unit === "unit3") {
       saveUnit3PracticeAttempt(grade);
       addUnit3TestMistakes(grade);
+    } else if (practiceTestSession.unit === "unit4") {
+      saveUnit4PracticeAttempt(grade);
+      addUnit4TestMistakes(grade);
     }
     results.classList.remove("hidden");
     $("#generate-new-test").addEventListener("click", () => startPracticeTest(practiceTestSession.test.signature));
@@ -537,8 +591,7 @@
   }
 
   function vocabularyEntries() {
-    if (activeUnit === "unit3") return UNIT3.vocabulary.map((entry) => ({ ...entry, variants: [] }));
-    if (activeUnit === "unit2") return UNIT2.vocabulary.map((entry) => ({ ...entry, variants: [] }));
+    if (studyModule()) return studyModule().vocabulary.map((entry) => ({ ...entry, variants: [] }));
     const grouped = new Map();
     DATA.nouns.forEach((noun) => {
       const key = lexicalKey(noun.singular);
@@ -578,8 +631,8 @@
     const sortBy = $("#vocabulary-sort").value;
     const filters = $("#vocabulary-filters");
     filters.classList.toggle("hidden", activeUnit === "unit1");
-    if (activeUnit === "unit2" || activeUnit === "unit3") {
-      const module = activeUnit === "unit3" ? UNIT3 : UNIT2;
+    if (studyModule()) {
+      const module = studyModule();
       filters.innerHTML = module.vocabularyFilters.map(([value, label]) => `<button type="button" class="preset-button ${vocabularyFilter === value ? "selected" : ""}" data-vocabulary-filter="${value}">${escapeHtml(label)}</button>`).join("");
     } else filters.innerHTML = "";
     const prepositionFilters = $("#preposition-vocabulary-filters");
@@ -600,13 +653,20 @@
       $("#vocabulary-list").innerHTML = entries.length ? `<div class="possessive-vocabulary-wrap"><table class="possessive-vocabulary-table verb-vocabulary-table"><thead><tr><th>Italian</th><th>English</th><th>Type</th></tr></thead><tbody>${entries.map((entry) => `<tr><td><strong>${escapeHtml(entry.italian)}</strong></td><td>${escapeHtml(entry.english)}</td><td>${escapeHtml(entry.verbType)}</td></tr>`).join("")}</tbody></table></div>` : '<div class="empty-state"><h2>No words found</h2><p>Try a different Italian or English search.</p></div>';
       return;
     }
+    if (activeUnit === "unit4" && ["reflexive", "reciprocal"].includes(vocabularyFilter)) {
+      $("#vocabulary-list").innerHTML = entries.length ? `<div class="possessive-vocabulary-wrap"><table class="possessive-vocabulary-table verb-vocabulary-table"><thead><tr><th>Italian</th><th>English</th><th>Type</th></tr></thead><tbody>${entries.map((entry) => `<tr><td><strong>${escapeHtml(entry.italian)}</strong></td><td>${escapeHtml(entry.english)}</td><td>${escapeHtml(entry.type || entry.tag)}</td></tr>`).join("")}</tbody></table></div>` : '<div class="empty-state"><h2>No words found</h2><p>Try a different Italian or English search.</p></div>';
+      return;
+    }
     $("#vocabulary-list").innerHTML = entries.map((entry) => {
       const { italian, english, tag, register, variants } = entry;
       const key = lexicalKey(italian);
       const isOpen = expanded === true || (expanded instanceof Set && expanded.has(key));
       const unique = (field) => [...new Set(variants.map((item) => item[field]))];
       let unit2Grammar = "";
-      if (activeUnit === "unit3" && entry.prepositionForm) {
+      if (activeUnit === "unit4" && entry.forms && entry.infinitive) {
+        const formEntries = Object.entries(entry.forms);
+        unit2Grammar = `<div class="vocabulary-grammar"><div><small>Type</small><b>${escapeHtml(entry.type || entry.tag)}</b></div><div><small>Forms</small><b>${escapeHtml(formEntries.map(([subject, form]) => `${subject} ${form}`).join(" · "))}</b></div></div>`;
+      } else if (activeUnit === "unit3" && entry.prepositionForm) {
         unit2Grammar = `<div class="vocabulary-grammar"><div><small>Components</small><b>${escapeHtml(entry.components)}</b></div><div><small>Combined form</small><b>${escapeHtml(entry.combined)}</b></div><div><small>Base preposition</small><b>${escapeHtml(entry.preposition.toUpperCase())}</b></div></div>`;
       } else if (activeUnit === "unit3" && entry.forms && entry.infinitive) {
         unit2Grammar = `<div class="vocabulary-grammar"><div><small>Verb type</small><b>${escapeHtml(entry.verbType || entry.conjugationType)}</b></div><div><small>Singular subjects</small><b>${escapeHtml(`io ${entry.forms.io} · tu ${entry.forms.tu} · lui/lei ${entry.forms["lui/lei/Lei"]}`)}</b></div><div><small>Plural subjects</small><b>${escapeHtml(`noi ${entry.forms.noi} · voi ${entry.forms.voi} · loro ${entry.forms.loro}`)}</b></div></div>`;
@@ -641,9 +701,10 @@
   }
 
   function renderLearnCard(key = learnCardKey) {
-    learnCardKey = UNIT3.learnCards[key] ? key : Object.keys(UNIT3.learnCards)[0];
-    const card = UNIT3.learnCards[learnCardKey];
-    $("#learn-tabs").innerHTML = Object.keys(UNIT3.learnCards).map((name) => `<button type="button" class="preset-button ${name === learnCardKey ? "selected" : ""}" data-learn-card="${escapeHtml(name)}">${escapeHtml(name)}</button>`).join("");
+    const module = studyModule();
+    learnCardKey = module.learnCards[key] ? key : Object.keys(module.learnCards)[0];
+    const card = module.learnCards[learnCardKey];
+    $("#learn-tabs").innerHTML = Object.keys(module.learnCards).map((name) => `<button type="button" class="preset-button ${name === learnCardKey ? "selected" : ""}" data-learn-card="${escapeHtml(name)}">${escapeHtml(name)}</button>`).join("");
     $("#learn-card").innerHTML = `<p class="eyebrow">Rule</p><h2>${escapeHtml(card.title)}</h2><p class="learn-rule">${escapeHtml(card.rule)}</p><div class="learn-chart">${card.chart.map(([label, value]) => `<div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(value)}</span></div>`).join("")}</div><section><h3>Examples</h3><ul>${card.examples.map((example) => `<li>${escapeHtml(example)}</li>`).join("")}</ul></section><aside class="learn-mistake"><strong>Common mistake</strong><span>${escapeHtml(card.mistake)}</span></aside><section class="learn-try"><h3>Try one</h3><p>${escapeHtml(card.tryOne)}</p><div><input id="learn-try-answer" class="typed-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type your answer…"><button id="check-learn-answer" class="primary-button" type="button">Check</button></div><div id="learn-try-feedback" class="feedback hidden" role="status"></div></section>${card.action ? `<div class="learn-related"><span>Ready for the related skill?</span><button id="learn-related-action" class="secondary-button" type="button">${escapeHtml(card.action.label)}</button></div>` : ""}`;
     $("#check-learn-answer").addEventListener("click", () => {
       const input = $("#learn-try-answer");
@@ -766,7 +827,7 @@
   }
 
   function matchingCategoryEligible(category, numberRange = settings.numberRange) {
-    const matchingCategories = activeUnit === "unit3" ? UNIT3.matchingCategories : activeUnit === "unit2" ? UNIT2.matchingCategories : UNIT1_MATCHING_CATEGORIES;
+    const matchingCategories = studyModule()?.matchingCategories || UNIT1_MATCHING_CATEGORIES;
     return matchingCategories.includes(category) && (category !== "Numbers" || numberRange === "basic");
   }
 
@@ -829,7 +890,10 @@
       "Personality Adjectives", "Physical Appearance", "Colors", "Nationalities", "School Subjects", "Classroom Objects",
       "Avere Expressions", "Days / Agenda Vocabulary", "Core Family Vocabulary", "Extended Family Vocabulary",
       "Family Relationships / Status", "-ERE Verb Vocabulary", "-IRE Verb Vocabulary", "-IRE + -ISC Verb Vocabulary",
-      "House — Rooms", "House — Furniture", "House — Other", "Articulated Preposition Forms"
+      "House — Rooms", "House — Furniture", "House — Other", "Articulated Preposition Forms",
+      "Clothing", "Weather", "Seasons", "Sports", "Sports Equipment", "Reflexive Verb Vocabulary",
+      "Reciprocal Verb Vocabulary", "Daily Routine Vocabulary", "Time Vocabulary", "Duration Vocabulary",
+      "Culture — Piemonte & Valle d’Aosta"
     ].includes(category) || category.startsWith("Verb Vocabulary"));
     $("#session-direction-wrap").classList.toggle("hidden", !hasVocabularyTranslations);
     $("#session-direction").textContent = directionLabels[session.vocabularyDirection];
@@ -877,6 +941,7 @@
     if (settings.emphasis === "weak" && value !== null) weight *= 1 + ((100 - value) / 35);
     if (activeUnit === "unit1" && CORE_CATEGORIES.includes(category)) weight *= 1.35;
     if (activeUnit === "unit3" && category === "House — Other") weight *= 0.65;
+    if (activeUnit === "unit4" && category === "Culture — Piemonte & Valle d’Aosta") weight *= 0.55;
     return weight;
   }
 
@@ -885,6 +950,7 @@
   }
 
   function mistakeIsEligible(item) {
+    if (activeUnit === "unit4") return UNIT4.isSourceEligible(item.category, item.sourceId);
     if (activeUnit === "unit3") return UNIT3.isSourceEligible(item.category, item.sourceId);
     if (activeUnit === "unit2") return UNIT2.isSourceEligible(item.category, item.sourceId);
     return item.category !== "Gender" || eligibleNouns("Gender").some((noun) => noun.id === item.sourceId);
@@ -1099,6 +1165,7 @@
   }
 
   function makeQuestion(category, sourceId = null) {
+    if (activeUnit === "unit4") return UNIT4.makeQuestion(category, sourceId, DATA, session?.vocabularyDirection || settings.vocabularyDirection);
     if (activeUnit === "unit3") return UNIT3.makeQuestion(category, sourceId, DATA, session?.vocabularyDirection || settings.vocabularyDirection);
     if (activeUnit === "unit2") return UNIT2.makeQuestion(category, sourceId, DATA, session?.vocabularyDirection || settings.vocabularyDirection);
     let noun = NOUN_CATEGORIES.includes(category) && category !== "Definite Articles" ? pickNoun(sourceId, category) : null;
@@ -1474,6 +1541,14 @@
       if (exact) skill.correct += 1;
       progress.skills[skillKey] = skill;
       }
+    } else if (activeUnit === "unit4") {
+      const skillKey = UNIT4.skillMap[q.category];
+      if (skillKey) {
+        const skill = progress.skills[skillKey] || { answered: 0, correct: 0 };
+        skill.answered += 1;
+        if (exact) skill.correct += 1;
+        progress.skills[skillKey] = skill;
+      }
     }
     const key = `${q.category}|${q.sourceId}`;
     const item = progress.items[key] || { attempts: 0, correct: 0, misses: 0, streak: 0 };
@@ -1496,7 +1571,7 @@
         key, category: q.category, sourceId: q.sourceId, label: q.display,
         misses: (progress.mistakes[key]?.misses || 0) + 1, streak: 0, lastMiss: Date.now(), ...(errorType ? { errorType } : {})
       };
-      const delay = activeUnit === "unit3" ? 8 + Math.floor(Math.random() * 3) : 4;
+      const delay = ["unit3", "unit4"].includes(activeUnit) ? 8 + Math.floor(Math.random() * 3) : 4;
       progress.reviewQueue.push({ category: q.category, sourceId: q.reviewSourceId || q.sourceId, due: progress.today.answered + delay });
       progress.reviewQueue = progress.reviewQueue.slice(-40);
     }
@@ -1562,6 +1637,7 @@
   }
 
   function makeMatchingQuestion(category) {
+    if (activeUnit === "unit4") return UNIT4.makeMatchingQuestion(category);
     if (activeUnit === "unit3") return UNIT3.makeMatchingQuestion(category);
     if (activeUnit === "unit2") return UNIT2.makeMatchingQuestion(category);
     let pairs = [];
