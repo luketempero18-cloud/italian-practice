@@ -202,6 +202,7 @@
 
   function initSettings() {
     const wrap = $("#topic-groups");
+    wrap.classList.toggle("unit4-layout", activeUnit === "unit4");
     if (activeUnit === "unit4") renderUnit4TopicCards();
     else wrap.innerHTML = topicGroups().map((group) => `<div class="topic-group"><h3>${escapeHtml(group.name)}</h3><div class="checkbox-grid">${group.topics.map(([topic, note, exam2]) => {
         const checked = settings.topics.includes(topic) ? "checked" : "";

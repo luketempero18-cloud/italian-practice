@@ -65,6 +65,7 @@ h2 { font-size: 30px; line-height: 1.15; }
 .section-note { margin: 0 0 4px; color: var(--muted); font-size: 14px; }
 .topic-builder { margin-top: 36px; padding: 32px; border: 1px solid var(--line); border-radius: 22px; background: rgba(255,255,255,.78); }
 .topic-groups { display: grid; grid-template-columns: 1.5fr .75fr 1.25fr; gap: 18px; }
+.topic-groups.unit4-layout { display: block; }
 .topic-group { min-width: 0; }
 .topic-group h3 { margin: 0 0 10px; color: var(--muted); font-size: 11px; letter-spacing: .09em; text-transform: uppercase; }
 .topic-group .checkbox-grid { grid-template-columns: 1fr; }
@@ -93,8 +94,8 @@ h2 { font-size: 30px; line-height: 1.15; }
 .unit4-practice-options > strong { display: block; margin-bottom: 8px; font-size: 11px; }
 .unit4-practice-options > div { display: flex; flex-wrap: wrap; gap: 6px; }
 .unit4-practice-option { min-height: 32px; border-radius: 999px; }
-.unit4-mixed-card { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; margin-top: 14px; padding: 22px; border: 1px solid #b8d2c6; border-radius: 18px; background: var(--green-soft); }
-.unit4-mixed-card > div:last-child { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; grid-column: 1 / -1; }
+.unit4-mixed-card { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 16px; align-items: center; margin-top: 14px; padding: 22px; border: 1px solid #b8d2c6; border-radius: 18px; background: var(--green-soft); }
+.unit4-mixed-card > div:last-child { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
 .unit4-mixed-card span { color: var(--muted); font-size: 12px; }
 .exam-badge { display: inline-flex; width: fit-content; margin-top: 3px; padding: 2px 6px; border-radius: 999px; color: #765212; background: #fff0c7; font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .preset-row { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
