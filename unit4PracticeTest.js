@@ -21,16 +21,17 @@
       options, explanation: item.explanation, category: item.category, type: "radio" };
   };
 
-  // 60 questions: 25% reflexives, 20% modals, 15% time, 15% town,
-  // 10% weather/clothing, 10% reciprocal, and 5% sports. Culture stays optional.
+  // 60 questions. Demonstratives receive 8 questions (13.3%); the existing
+  // priority sections are reduced proportionally. Culture stays optional.
   const CONFIG = [
-    ["reflexive", "Reflexive Verbs & Daily Routine", 15, ["Reflexive Meanings", "Reflexive Pronouns", "Reflexive Conjugation", "Reflexive vs. Normal", "Daily Routine"]],
-    ["modals", "Modal Verbs", 12, ["Modal Meanings", "Modal Conjugations", "Choose the Modal", "Modal + Infinitive", "Modal + Reflexive"]],
-    ["time", "Time & Duration", 9, ["Read the Time", "Write the Time", "A che ora", "24-Hour Conversion", "Duration"]],
-    ["town", "Around Town", 9, ["Place Vocabulary", "Errand → Place", "Directions", "Location Words", "Town Prepositions", "Map Practice"]],
-    ["weather", "Weather, Seasons & Clothing", 6, ["Weather Vocabulary", "Season Vocabulary", "Clothing Vocabulary", "Weather → Clothing"]],
-    ["reciprocal", "Reciprocal Actions", 6, ["Reciprocal Meanings", "Reciprocal Pronouns", "Reciprocal Conjugation", "Reciprocal vs. Ordinary"]],
-    ["sports", "Sports", 3, ["Sports Vocabulary", "Sports Prepositions", "Ski: Verb / Sport / Equipment"]]
+    ["reflexive", "Reflexive Verbs & Daily Routine", 13, ["Reflexive Meanings", "Reflexive Pronouns", "Reflexive Conjugation", "Reflexive vs. Normal", "Daily Routine"]],
+    ["modals", "Modal Verbs", 11, ["Modal Meanings", "Modal Conjugations", "Choose the Modal", "Modal + Infinitive", "Modal + Reflexive"]],
+    ["time", "Time & Duration", 8, ["Read the Time", "Write the Time", "A che ora", "24-Hour Conversion", "Duration"]],
+    ["town", "Around Town", 8, ["Place Vocabulary", "Errand → Place", "Directions", "Location Words", "Town Prepositions", "Map Practice"]],
+    ["weather", "Weather, Seasons & Clothing", 5, ["Weather Vocabulary", "Season Vocabulary", "Clothing Vocabulary", "Weather → Clothing"]],
+    ["reciprocal", "Reciprocal Actions", 5, ["Reciprocal Meanings", "Reciprocal Pronouns", "Reciprocal Conjugation", "Reciprocal vs. Ordinary"]],
+    ["sports", "Sports", 2, ["Sports Vocabulary", "Sports Prepositions", "Ski: Verb / Sport / Equipment"]],
+    ["demonstratives", "Demonstratives", 8, ["Questo Agreement", "Quello + Articles", "This vs That", "Adjective vs Pronoun", "Replace the Noun", "Context / Distance"]]
   ];
 
   function createSection(unit4, id, title, count, categories, number) {

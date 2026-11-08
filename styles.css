@@ -88,6 +88,9 @@ h2 { font-size: 30px; line-height: 1.15; }
 .unit4-topic-stats { display: flex; flex-wrap: wrap; gap: 12px; margin: 14px 0; color: var(--muted); font-size: 11px; }
 .unit4-topic-stats strong { color: var(--ink); font-size: 13px; }
 .unit4-topic-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
+.unit4-topic-actions.demonstrative-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.unit4-topic-actions.demonstrative-actions button:nth-child(3), .unit4-topic-actions.demonstrative-actions button:nth-child(4) { font-size: 10px; }
+.unit4-topic-actions.demonstrative-actions button:last-child { grid-column: 1 / -1; }
 .unit4-topic-actions button, .unit4-practice-option, .unit4-mixed-card button { min-height: 36px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: white; cursor: pointer; font-size: 11px; font-weight: 750; }
 .unit4-topic-actions button:hover, .unit4-practice-option:hover, .unit4-mixed-card button:hover { border-color: #9eb9ac; color: var(--green); background: var(--green-soft); }
 .unit4-practice-options { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }

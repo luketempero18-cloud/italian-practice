@@ -48,6 +48,7 @@
   const WEATHER_GROUP = "weather-clothing";
   const RECIPROCAL_GROUP = "reciprocal";
   const SPORTS_GROUP = "sports";
+  const DEMONSTRATIVE_GROUP = "demonstratives";
   const CULTURE_GROUP = "culture";
 
   const CORE_REFLEXIVE_NAMES = ["svegliarsi", "alzarsi", "lavarsi", "prepararsi", "vestirsi", "mettersi", "addormentarsi", "riposarsi", "divertirsi"];
@@ -124,6 +125,29 @@
     baseWord("pattinare sul ghiaccio", SPORTS_GROUP, "sports expression"), baseWord("gli sci", SPORTS_GROUP, "equipment")
   ];
 
+  const DEMONSTRATIVE_WORDS = [
+    vocab("demo-questo", "questo", "this — masculine singular", DEMONSTRATIVE_GROUP, "questo family"),
+    vocab("demo-questa", "questa", "this — feminine singular", DEMONSTRATIVE_GROUP, "questo family"),
+    vocab("demo-questi", "questi", "these — masculine plural", DEMONSTRATIVE_GROUP, "questo family"),
+    vocab("demo-queste", "queste", "these — feminine plural", DEMONSTRATIVE_GROUP, "questo family"),
+    vocab("demo-quest-apostrophe", "quest’", "this before a vowel", DEMONSTRATIVE_GROUP, "questo family"),
+    vocab("demo-quel", "quel", "that before an IL noun", DEMONSTRATIVE_GROUP, "quello before a noun"),
+    vocab("demo-quello", "quello", "that before a LO noun / that one", DEMONSTRATIVE_GROUP, "quello form"),
+    vocab("demo-quell-apostrophe", "quell’", "that before an L’ noun", DEMONSTRATIVE_GROUP, "quello before a noun"),
+    vocab("demo-quella", "quella", "that before a LA noun / that one (feminine)", DEMONSTRATIVE_GROUP, "quello form"),
+    vocab("demo-quei", "quei", "those before an I noun", DEMONSTRATIVE_GROUP, "quello before a noun"),
+    vocab("demo-quegli", "quegli", "those before a GLI noun", DEMONSTRATIVE_GROUP, "quello before a noun"),
+    vocab("demo-quelle", "quelle", "those before a LE noun / those ones (feminine)", DEMONSTRATIVE_GROUP, "quello form"),
+    vocab("demo-quelli", "quelli", "those ones — masculine plural", DEMONSTRATIVE_GROUP, "demonstrative pronoun"),
+    vocab("demo-qui", "qui", "here", DEMONSTRATIVE_GROUP, "location cue"),
+    vocab("demo-qui-vicino", "qui vicino", "nearby", DEMONSTRATIVE_GROUP, "location cue"),
+    vocab("demo-vicino-me", "vicino a me", "near me", DEMONSTRATIVE_GROUP, "location cue"),
+    vocab("demo-li", "lì", "there", DEMONSTRATIVE_GROUP, "location cue"),
+    vocab("demo-la", "là", "over there", DEMONSTRATIVE_GROUP, "location cue"),
+    vocab("demo-in-fondo", "in fondo", "at the back / at the end", DEMONSTRATIVE_GROUP, "location cue"),
+    vocab("demo-lassu", "lassù", "up there", DEMONSTRATIVE_GROUP, "location cue")
+  ];
+
   const CULTURE_WORDS = ["il Piemonte", "Torino", "la Valle d’Aosta", "Monte Bianco", "Piazza Castello"].map((term) => baseWord(term, CULTURE_GROUP, "culture recognition"));
 
   function mergeCoreWords(items) {
@@ -137,7 +161,7 @@
   }
   const CORE_WORDS = mergeCoreWords([
     ...ROUTINE_WORDS, ...MODALS, ...MODAL_SECONDARY, ...TIME_WORDS, ...TOWN_WORDS, ...WEATHER_WORDS, ...SEASON_WORDS,
-    ...CLOTHING_WORDS, ...RECIPROCAL_VERBS, ...SPORTS_WORDS, ...CULTURE_WORDS
+    ...CLOTHING_WORDS, ...RECIPROCAL_VERBS, ...SPORTS_WORDS, ...DEMONSTRATIVE_WORDS, ...CULTURE_WORDS
   ]);
   const RETAINED_LATER_WORDS = BASE.vocabulary.map((item) => ({ ...item, priority: "later", activeForCurrentStudy: false }));
 
@@ -356,6 +380,141 @@
     return q;
   }
 
+  const DEMONSTRATIVE_NOUNS = [
+    { id: "negozio", article: "il", noun: "negozio", english: "shop", gender: "m", number: "sg", near: "questo", far: "quel" },
+    { id: "maglietta", article: "la", noun: "maglietta", english: "T-shirt", gender: "f", number: "sg", near: "questa", far: "quella" },
+    { id: "sandali", article: "i", noun: "sandali", english: "sandals", gender: "m", number: "pl", near: "questi", far: "quei" },
+    { id: "scarpe", article: "le", noun: "scarpe", english: "shoes", gender: "f", number: "pl", near: "queste", far: "quelle" },
+    { id: "cappello", article: "il", noun: "cappello", english: "hat", gender: "m", number: "sg", near: "questo", far: "quel" },
+    { id: "zaino", article: "lo", noun: "zaino", english: "backpack", gender: "m", number: "sg", near: "questo", far: "quello" },
+    { id: "impermeabile", article: "l’", noun: "impermeabile", english: "raincoat", gender: "m", number: "sg", near: "quest’", far: "quell’" },
+    { id: "autobus", article: "l’", noun: "autobus", english: "bus", gender: "m", number: "sg", near: "quest’", far: "quell’" },
+    { id: "amici", article: "gli", noun: "amici", english: "friends", gender: "m", number: "pl", near: "questi", far: "quegli" },
+    { id: "cappelli", article: "i", noun: "cappelli", english: "hats", gender: "m", number: "pl", near: "questi", far: "quei" },
+    { id: "zaini", article: "gli", noun: "zaini", english: "backpacks", gender: "m", number: "pl", near: "questi", far: "quegli" },
+    { id: "impermeabili", article: "gli", noun: "impermeabili", english: "raincoats", gender: "m", number: "pl", near: "questi", far: "quegli" },
+    { id: "magliette", article: "le", noun: "magliette", english: "T-shirts", gender: "f", number: "pl", near: "queste", far: "quelle" },
+    { id: "pantaloni", article: "i", noun: "pantaloni", english: "pants", gender: "m", number: "pl", near: "questi", far: "quei" },
+    { id: "giacca", article: "la", noun: "giacca", english: "jacket", gender: "f", number: "sg", near: "questa", far: "quella" },
+    { id: "guanti", article: "i", noun: "guanti", english: "gloves", gender: "m", number: "pl", near: "questi", far: "quei" },
+    { id: "sciarpe", article: "le", noun: "sciarpe", english: "scarves", gender: "f", number: "pl", near: "queste", far: "quelle" },
+    { id: "stivali", article: "gli", noun: "stivali da pioggia", english: "rain boots", gender: "m", number: "pl", near: "questi", far: "quegli" },
+    { id: "scarponi", article: "gli", noun: "scarponi", english: "boots", gender: "m", number: "pl", near: "questi", far: "quegli" },
+    { id: "costume", article: "il", noun: "costume da bagno", english: "swimsuit", gender: "m", number: "sg", near: "questo", far: "quel" },
+    { id: "bar", article: "il", noun: "bar", english: "bar", gender: "m", number: "sg", near: "questo", far: "quel" },
+    { id: "cinema", article: "il", noun: "cinema", english: "cinema", gender: "m", number: "sg", near: "questo", far: "quel" },
+    { id: "stadio", article: "lo", noun: "stadio", english: "stadium", gender: "m", number: "sg", near: "questo", far: "quello" },
+    { id: "edicola", article: "l’", noun: "edicola", english: "newsstand", gender: "f", number: "sg", near: "quest’", far: "quell’" },
+    { id: "banca", article: "la", noun: "banca", english: "bank", gender: "f", number: "sg", near: "questa", far: "quella" },
+    { id: "fermata", article: "la", noun: "fermata dell’autobus", english: "bus stop", gender: "f", number: "sg", near: "questa", far: "quella" },
+    { id: "stazione", article: "la", noun: "stazione dei treni", english: "train station", gender: "f", number: "sg", near: "questa", far: "quella" }
+  ];
+  const DEMONSTRATIVE_CORE_FORMS = [
+    ["this-ms", "this — masculine singular", "questo"], ["this-fs", "this — feminine singular", "questa"],
+    ["these-mp", "these — masculine plural", "questi"], ["these-fp", "these — feminine plural", "queste"],
+    ["that-ms", "that one — masculine singular", "quello"], ["that-fs", "that one — feminine singular", "quella"],
+    ["those-mp", "those ones — masculine plural", "quelli"], ["those-fp", "those ones — feminine plural", "quelle"]
+  ];
+  const DEMONSTRATIVE_FORM_DISTRACTORS = ["questo", "questa", "questi", "queste", "quest’", "quel", "quello", "quell’", "quella", "quei", "quegli", "quelli", "quelle"];
+  const selectDemonstrativeNoun = (sourceId, fallback = DEMONSTRATIVE_NOUNS) => {
+    const key = String(sourceId || "").split(":")[0];
+    const exact = DEMONSTRATIVE_NOUNS.find((item) => item.id === key);
+    const byForm = DEMONSTRATIVE_NOUNS.filter((item) => item.far === key || item.near === key);
+    const byArticle = DEMONSTRATIVE_NOUNS.filter((item) => item.article.replace("’", "") === key.replace("'", ""));
+    return exact || random(byForm.length ? byForm : byArticle.length ? byArticle : fallback);
+  };
+  function demonstrativeCoreQuestion(sourceId) {
+    const item = DEMONSTRATIVE_CORE_FORMS.find(([id, , answer]) => id === sourceId || answer === sourceId) || random(DEMONSTRATIVE_CORE_FORMS);
+    const q = question("Core Forms", item[2], item[1], item[2],
+      `${item[2].toUpperCase()} matches the requested meaning, gender, and number. QUESTO means this/these; QUELLO as a pronoun means that one/those ones.`,
+      DEMONSTRATIVE_FORM_DISTRACTORS.filter((value) => value !== item[2]));
+    q.forceChoice = true;
+    return q;
+  }
+  function questoAgreementQuestion(sourceId) {
+    const item = selectDemonstrativeNoun(sourceId);
+    const phrase = `${item.near}${item.near.endsWith("’") ? "" : " "}${item.noun}`;
+    const agreement = `${item.gender === "m" ? "masculine" : "feminine"} ${item.number === "sg" ? "singular" : "plural"}`;
+    const q = question("Questo Agreement", item.id, `___ ${item.noun} = ${item.number === "sg" ? "this" : "these"} ${item.english}`, item.near,
+      `${item.noun.toUpperCase()} is ${agreement}, so use ${item.near.toUpperCase()}. Complete phrase: ${phrase}.${item.near === "quest’" ? " Before a vowel, singular questo/questa becomes QUEST’." : ""}`,
+      ["questo", "questa", "questi", "queste", "quest’"].filter((value) => value !== item.near));
+    q.forceChoice = true;
+    return q;
+  }
+  function quelloArticleQuestion(sourceId) {
+    const item = selectDemonstrativeNoun(sourceId);
+    const phrase = `${item.far}${item.far.endsWith("’") ? "" : " "}${item.noun}`;
+    const q = question("Quello + Articles", item.far, `___ ${item.noun} = ${item.number === "sg" ? "that" : "those"} ${item.english}`, item.far,
+      `“${item.noun}” normally uses ${item.article.toUpperCase()}: ${item.article} ${item.noun}. For “that/those,” ${item.article.toUpperCase()} → ${item.far.toUpperCase()}. Therefore: ${phrase}.`,
+      DEMONSTRATIVE_FORM_DISTRACTORS.filter((value) => value !== item.far));
+    q.forceChoice = true;
+    q.reviewSourceId = item.article.replace("’", "");
+    return q;
+  }
+  const DISTANCE_CUES = [
+    ["here", "right next to me", true], ["nearby", "qui vicino", true], ["near-me", "vicino a me", true],
+    ["there", "lì", false], ["over-there", "là", false], ["back", "in fondo", false], ["up-there", "lassù", false]
+  ];
+  function thisThatQuestion(sourceId, category = "This vs That") {
+    const item = selectDemonstrativeNoun(sourceId);
+    const cue = random(DISTANCE_CUES);
+    const form = cue[2] ? item.near : item.far;
+    const phrase = `${form}${form.endsWith("’") ? "" : " "}${item.noun}`;
+    const q = question(category, `${item.id}:${cue[0]}`, `The ${item.english} ${item.number === "sg" ? "is" : "are"} ${cue[1]}. ___ ${item.noun}`, phrase,
+      `${cue[1].toUpperCase()} is a ${cue[2] ? "near" : "farther-away"} cue, so use the ${cue[2] ? "QUESTO" : "QUELLO"} family. Match ${item.gender === "m" ? "masculine" : "feminine"} ${item.number === "sg" ? "singular" : "plural"}: ${phrase}.`,
+      DEMONSTRATIVE_NOUNS.filter((candidate) => candidate.id !== item.id).slice(0, 4).map((candidate) => `${cue[2] ? candidate.near : candidate.far}${(cue[2] ? candidate.near : candidate.far).endsWith("’") ? "" : " "}${item.noun}`));
+    q.reviewSourceId = cue[2] ? "near" : "far";
+    return q;
+  }
+  const ADJECTIVE_PRONOUN_ITEMS = [
+    ["quei-vestiti", "quei vestiti", "demonstrative adjective", "The noun VESTITI is present after QUEI."],
+    ["quelli-blu", "quelli blu", "demonstrative pronoun", "The noun is omitted; QUELLI replaces a masculine plural noun."],
+    ["quelle-borse", "quelle borse", "demonstrative adjective", "The noun BORSE is present after QUELLE."],
+    ["quelle-verdi", "quelle verdi", "demonstrative pronoun", "The noun is omitted; QUELLE replaces a feminine plural noun."],
+    ["questi-pantaloni", "questi pantaloni", "demonstrative adjective", "The noun PANTALONI is present after QUESTI."],
+    ["questi-neri", "questi neri", "demonstrative pronoun", "The noun is omitted; QUESTI replaces a masculine plural noun."]
+  ];
+  function adjectivePronounQuestion(sourceId) {
+    const item = ADJECTIVE_PRONOUN_ITEMS.find(([id]) => id === sourceId) || random(ADJECTIVE_PRONOUN_ITEMS);
+    const q = question("Adjective vs Pronoun", item[0], `“${item[1]}”`, item[2], item[3], ["demonstrative adjective", "demonstrative pronoun"].filter((value) => value !== item[2]));
+    q.forceChoice = true;
+    q.reviewSourceId = "contrast";
+    return q;
+  }
+  const REPLACE_NOUN_ITEMS = [
+    ["pantaloni", "Preferisco quei pantaloni blu.", "Preferisco quelli blu.", "PANTALONI is masculine plural. The noun is not repeated, so use the pronoun QUELLI; with the noun present, use QUEI PANTALONI."],
+    ["giacca", "Mi piace quella giacca verde.", "Mi piace quella verde.", "GIACCA is feminine singular. QUELLA replaces the omitted noun."],
+    ["magliette", "Mi piacciono quelle magliette rosse.", "Mi piacciono quelle rosse.", "MAGLIETTE is feminine plural. QUELLE can replace the omitted noun."],
+    ["cappelli", "Preferisco quei cappelli neri.", "Preferisco quelli neri.", "CAPPELLI is masculine plural. Before the noun use QUEI; when the noun is removed use the pronoun QUELLI."]
+  ];
+  function replaceNounQuestion(sourceId) {
+    const item = REPLACE_NOUN_ITEMS.find(([id, , answer]) => id === sourceId || answer.toLocaleLowerCase("it-IT").includes(` ${String(sourceId).toLocaleLowerCase("it-IT")} `)) || random(REPLACE_NOUN_ITEMS);
+    const pronoun = item[2].match(/\b(questo|questa|questi|queste|quello|quella|quelli|quelle)\b/i)?.[1].toLocaleLowerCase("it-IT") || item[0];
+    const q = question("Replace the Noun", pronoun, `${item[1]} Remove the repeated noun.`, item[2], item[3], REPLACE_NOUN_ITEMS.map((row) => row[2]).filter((value) => value !== item[2]));
+    q.reviewSourceId = "pronoun";
+    return q;
+  }
+  const CONTEXT_ITEMS = [
+    ["shirt-near", "Mi piace ___ maglietta qui vicino.", "questa", "QUI VICINO cues THIS. MAGLIETTA is feminine singular, so use QUESTA."],
+    ["shoes-far", "Preferisco ___ scarpe là.", "quelle", "LÀ cues THOSE. SCARPE is feminine plural, so use QUELLE."],
+    ["dress-one", "Mi ___ questo vestito.", "piace", "VESTITO is one thing, so use PIACE."],
+    ["dresses-many", "Mi ___ questi vestiti.", "piacciono", "VESTITI is plural, so use PIACCIONO."],
+    ["boots-far", "Mi piacciono ___ scarponi lassù.", "quegli", "LASSÙ cues THOSE. SCARPONI uses GLI, so GLI → QUEGLI."],
+    ["raincoat-near", "Mi piace ___ impermeabile qui.", "quest’", "QUI cues THIS. Before a vowel, singular QUESTO becomes QUEST’." ]
+  ];
+  function demonstrativeContextQuestion(sourceId) {
+    const item = CONTEXT_ITEMS.find(([id]) => id === sourceId) || random(CONTEXT_ITEMS);
+    const q = question("Context / Distance", item[0], item[1], item[2], item[3], DEMONSTRATIVE_FORM_DISTRACTORS.concat(["piace", "piacciono"]).filter((value) => value !== item[2]));
+    q.forceChoice = true;
+    return q;
+  }
+  function demonstrativeAdjectiveQuestion(sourceId) {
+    return Math.random() < 0.5 ? questoAgreementQuestion(sourceId) : quelloArticleQuestion(sourceId);
+  }
+  function demonstrativePronounQuestion(sourceId) {
+    return Math.random() < 0.5 ? adjectivePronounQuestion(sourceId) : replaceNounQuestion(sourceId);
+  }
+
   const CULTURE_FACTS = [
     ["piemonte", "Piemonte means “foot of the mountain.”", "vero"], ["torino", "Torino is associated with Piemonte in the course reading.", "vero"],
     ["aosta", "Valle d’Aosta is described as Italy’s smallest region.", "vero"], ["monte", "Monte Bianco is described as Europe’s highest mountain.", "vero"],
@@ -375,7 +534,8 @@
     "Mixed Town": ["Place Vocabulary", "Errand → Place", "Directions", "Location Words", "Town Prepositions", "Map Practice"],
     "Mixed Weather & Clothing": ["Weather Vocabulary", "Season Vocabulary", "Clothing Vocabulary", "Weather → Clothing"],
     "Mixed Reciprocals": ["Reciprocal Meanings", "Reciprocal Pronouns", "Reciprocal Conjugation", "Reciprocal vs. Ordinary"],
-    "Mixed Sports": ["Sports Vocabulary", "Sports Prepositions", "Ski: Verb / Sport / Equipment"]
+    "Mixed Sports": ["Sports Vocabulary", "Sports Prepositions", "Ski: Verb / Sport / Equipment"],
+    "Mixed Demonstratives": ["Core Forms", "Questo Agreement", "Quello + Articles", "This vs That", "Adjective vs Pronoun", "Replace the Noun", "Context / Distance"]
   };
   const STAR_MIXED = Object.keys(MIXERS);
 
@@ -413,6 +573,15 @@
     if (category === "Sports Vocabulary") return vocabularyQuestion(category, SPORTS_WORDS, sourceId, direction);
     if (category === "Sports Prepositions") return sportsPrepositionQuestion(sourceId);
     if (category === "Ski: Verb / Sport / Equipment") return skiDistinctionQuestion(sourceId);
+    if (category === "Core Forms") return demonstrativeCoreQuestion(sourceId);
+    if (category === "Questo Agreement") return questoAgreementQuestion(sourceId);
+    if (category === "Quello + Articles") return quelloArticleQuestion(sourceId);
+    if (category === "This vs That") return thisThatQuestion(sourceId);
+    if (category === "Adjective vs Pronoun") return adjectivePronounQuestion(sourceId);
+    if (category === "Replace the Noun") return replaceNounQuestion(sourceId);
+    if (category === "Context / Distance") return demonstrativeContextQuestion(sourceId);
+    if (category === "Demonstrative Adjectives") return demonstrativeAdjectiveQuestion(sourceId);
+    if (category === "Demonstrative Pronouns") return demonstrativePronounQuestion(sourceId);
     return cultureQuestion(sourceId);
   }
 
@@ -424,6 +593,7 @@
     { id: "weather", title: "★ Weather, Seasons & Clothing", shortTitle: "Weather / Clothing", primary: true, vocabFilter: WEATHER_GROUP, learnCard: "Weather, Seasons & Clothing", skillKey: "weatherTopicAccuracy", summary: "Core seasons, weather, clothing, and logical weather-to-clothing choices.", whatToKnow: "Connect weather and seasons to clothing instead of memorizing disconnected lists.", categories: [...MIXERS["Mixed Weather & Clothing"], "Mixed Weather & Clothing"] },
     { id: "reciprocal", title: "★ Reciprocal Actions", shortTitle: "Reciprocal Actions", primary: true, vocabFilter: RECIPROCAL_GROUP, learnCard: "Reciprocal Actions", skillKey: "reciprocalTopicAccuracy", summary: "Core each-other verbs, plural pronouns, conjugation, and meaning contrasts.", whatToKnow: "Reciprocal actions require plural subjects: noi CI, voi VI, loro SI.", categories: [...MIXERS["Mixed Reciprocals"], "Mixed Reciprocals"] },
     { id: "sports", title: "★ Sports", shortTitle: "Sports", primary: true, vocabFilter: SPORTS_GROUP, learnCard: "Sports", skillKey: "sportsTopicAccuracy", summary: "Core activities, sports nouns, prepositions, and the sciare / lo sci / gli sci contrast.", whatToKnow: "Giocare A, andare IN, and pattinare SUL ghiaccio.", categories: [...MIXERS["Mixed Sports"], "Mixed Sports"] },
+    { id: "demonstratives", title: "★ Demonstratives", shortTitle: "Demonstratives", primary: true, vocabFilter: DEMONSTRATIVE_GROUP, learnCard: "Demonstratives", skillKey: "demonstrativeCoreAccuracy", summary: "This, that, these, and those as adjectives and pronouns, with practical article logic.", whatToKnow: "QUESTO agrees in gender and number; QUELLO before a noun follows the definite article pattern.", categories: ["Core Forms", "Demonstrative Adjectives", "Demonstrative Pronouns", ...MIXERS["Mixed Demonstratives"].slice(1), "Mixed Demonstratives"] },
     { id: "culture", title: "Culture — Quick Recognition", shortTitle: "Culture", primary: false, vocabFilter: CULTURE_GROUP, learnCard: "Culture — Quick Recognition", skillKey: "cultureTopicAccuracy", summary: "Five names and a handful of broad course facts—recognition only.", whatToKnow: "Recognize Piemonte, Torino, Valle d’Aosta, Monte Bianco, and Piazza Castello.", categories: ["Culture Quick Recognition"] }
   ];
   const TOPIC_BY_TITLE = Object.fromEntries(STUDY_TOPICS.map((topic) => [topic.title, topic]));
@@ -432,6 +602,17 @@
   const CATEGORY_TO_TOPIC = Object.fromEntries(STUDY_TOPICS.flatMap((topic) => topic.categories.map((category) => [category, topic.id])));
   CATEGORY_TO_TOPIC["Mixed Unit 4"] = "mixed";
   const SKILL_MAP = Object.fromEntries(STUDY_TOPICS.flatMap((topic) => topic.categories.map((category) => [category, topic.skillKey])));
+  Object.assign(SKILL_MAP, {
+    "Core Forms": "demonstrativeCoreAccuracy",
+    "Questo Agreement": "questoAgreementAccuracy",
+    "Demonstrative Adjectives": "questoAgreementAccuracy",
+    "Quello + Articles": "quelloArticleAccuracy",
+    "Demonstrative Pronouns": "demonstrativePronounAccuracy",
+    "Adjective vs Pronoun": "demonstrativePronounAccuracy",
+    "Replace the Noun": "demonstrativePronounAccuracy",
+    "This vs That": "demonstrativeContextAccuracy",
+    "Context / Distance": "demonstrativeContextAccuracy"
+  });
   SKILL_MAP["Mixed Unit 4"] = "mixedUnit4Accuracy";
 
   const LEARN_CARDS = {
@@ -442,6 +623,7 @@
     "Weather, Seasons & Clothing": { title: "Weather, Seasons & Clothing", rule: "Connect the season and weather to logical clothing instead of memorizing three separate lists.", chart: [["freddo / caldo", "cold / hot"], ["sereno / nuvoloso", "clear / cloudy"], ["bel / brutto tempo", "nice / bad weather"], ["piove", "ombrello · impermeabile · stivali"]], examples: ["Fa freddo e nevica → guanti, sciarpa, maglione, scarponi.", "Fa caldo e c’è il sole → costume, sandali, occhiali, pantaloncini."], mistake: "Choose a logical core clothing item; do not use an unrelated word as the clue.", tryOne: "It is snowing →", tryAnswer: "nevica" },
     "Reciprocal Actions": { title: "Reciprocal Actions", rule: "Reciprocal means EACH OTHER and requires a plural subject: NOI → CI, VOI → VI, LORO → SI.", chart: [["noi", "ci incontriamo"], ["voi", "vi salutate"], ["loro", "si vedono"], ["riunirsi", "ci riuniamo · vi riunite · si riuniscono"]], examples: ["Roberto saluta Cristina (ordinary).", "Roberto e Cristina si salutano (each other)."], mistake: "Decide from meaning, not only from whether the infinitive ends in -si.", tryOne: "loro — vedersi →", tryAnswer: "si vedono" },
     "Sports": { title: "Sports", rule: "Memorize the complete sports expression and its preposition.", chart: [["giocare", "A tennis / calcio / pallacanestro"], ["andare", "IN bicicletta / barca"], ["pattinare", "SUL ghiaccio"], ["ski", "sciare · lo sci · gli sci"]], examples: ["giocare a tennis", "andare in bicicletta", "pattinare sul ghiaccio"], mistake: "SCIARE is the verb, LO SCI is the sport, and GLI SCI are the equipment.", tryOne: "andare ___ bicicletta", tryAnswer: "in" },
+    "Demonstratives": { title: "Demonstratives — This / That / These / Those", rule: "QUESTO means this/these and usually points nearby. QUELLO means that/those and usually points farther away. Every form matches gender and number.", chart: [["THIS / THESE", "M SG questo · F SG questa · M PL questi · F PL queste"], ["THAT / THOSE — PRONOUN", "M SG quello · F SG quella · M PL quelli · F PL quelle"], ["THAT before a noun", "il→quel · lo→quello · l’→quell’ · la→quella"], ["THOSE before a noun", "i→quei · gli→quegli · le→quelle"], ["before a vowel", "quest’estate · quest’impermeabile · quest’autobus"]], examples: ["questo negozio · questa maglietta · questi sandali · queste scarpe", "quel cappello · quello zaino · quell’impermeabile", "quei vestiti = adjective + noun", "quelli blu = pronoun; the noun is omitted", "qui / vicino a me → this or these; lì / là / in fondo / lassù → that or those"], mistake: "QUEI goes before a masculine plural I noun: quei pantaloni. QUELLI replaces that noun: quelli blu.", tryOne: "lo zaino → that backpack", tryAnswer: "quello zaino" },
     "Culture — Quick Recognition": { title: "Culture — Quick Recognition", rule: "Recognize five major names and only the broad facts used in the course reading.", chart: [["Piemonte", "‘foot of the mountain’"], ["Torino", "city in Piemonte"], ["Valle d’Aosta", "smallest region in the reading"], ["Monte Bianco", "Europe’s highest mountain in the reading"], ["Piazza Castello", "important square in Torino"]], examples: ["Culture stays optional and low priority."], mistake: "Do not spend cram time on obscure Review It vocabulary.", tryOne: "Important square in Torino →", tryAnswer: "Piazza Castello" }
   };
 
@@ -465,7 +647,7 @@
   window.UNIT4_DATA = {
     ...BASE,
     categories: CATEGORIES, topics: TOPICS, defaultTopics: PRIORITY_TOPICS,
-    topicGroups: [{ name: "Unit 4 cram topics", topics: STUDY_TOPICS.map((topic) => [topic.title, topic.summary]) }, { name: "Mixed", topics: [["Mixed Unit 4", "Balanced practice across the seven ★ topics"]] }],
+    topicGroups: [{ name: "Unit 4 cram topics", topics: STUDY_TOPICS.map((topic) => [topic.title, topic.summary]) }, { name: "Mixed", topics: [["Mixed Unit 4", "Balanced practice across the eight ★ topics"]] }],
     presets: { priority: PRIORITY_TOPICS, reflexive: [STUDY_TOPICS[0].title], modals: [STUDY_TOPICS[1].title], time: [STUDY_TOPICS[2].title], everything: TOPICS },
     presetLabels: { priority: "All ★ Topics", reflexive: "Reflexives", modals: "Modals", time: "Time", everything: "All Core + Culture" },
     matchingCategories: MATCHING_CATEGORIES, vocabulary: [...CORE_WORDS, ...RETAINED_LATER_WORDS], vocabularyFilters: VOCABULARY_FILTERS,
@@ -480,7 +662,7 @@
       const direct = topics.filter((topic) => TOPICS.includes(topic));
       if (direct.length) return [...new Set(direct)];
       const hadCulture = topics.some((topic) => String(topic).includes("Culture"));
-      return hadCulture ? [...PRIORITY_TOPICS, STUDY_TOPICS[7].title] : [...PRIORITY_TOPICS];
+      return hadCulture ? [...PRIORITY_TOPICS, STUDY_TOPICS.find((topic) => topic.id === "culture").title] : [...PRIORITY_TOPICS];
     },
     isSourceEligible(category) { return CATEGORIES.includes(category); },
     topicForCategory(category) { return CATEGORY_TO_TOPIC[category] || null; }

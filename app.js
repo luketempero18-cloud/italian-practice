@@ -239,18 +239,22 @@
       const selected = settings.topics.includes(topic.title) ? "checked" : "";
       const mastery = unit4TopicAccuracy(topic);
       const mistakes = unit4TopicMistakes(topic);
-      const options = topic.categories.map((category) => `<button type="button" class="unit4-practice-option" data-u4-category="${escapeHtml(category)}" data-u4-topic="${escapeHtml(topic.id)}">${escapeHtml(category)}</button>`).join("");
+      const practiceCategories = topic.id === "demonstratives" ? topic.categories.filter((category) => !["Demonstrative Adjectives", "Demonstrative Pronouns"].includes(category)) : topic.categories;
+      const options = practiceCategories.map((category) => `<button type="button" class="unit4-practice-option" data-u4-category="${escapeHtml(category)}" data-u4-topic="${escapeHtml(topic.id)}">${escapeHtml(category)}</button>`).join("");
+      const actions = topic.id === "demonstratives"
+        ? `<button type="button" data-u4-action="learn" data-u4-topic="${escapeHtml(topic.id)}">Learn</button><button type="button" data-u4-category="Core Forms" data-u4-topic="${escapeHtml(topic.id)}">Core Forms</button><button type="button" data-u4-category="Demonstrative Adjectives" data-u4-topic="${escapeHtml(topic.id)}">Demonstrative Adjectives</button><button type="button" data-u4-category="Demonstrative Pronouns" data-u4-topic="${escapeHtml(topic.id)}">Demonstrative Pronouns</button><button type="button" data-u4-action="practice" data-u4-topic="${escapeHtml(topic.id)}">Practice</button><button type="button" data-u4-action="mistakes" data-u4-topic="${escapeHtml(topic.id)}">Mistakes${mistakes ? ` (${mistakes})` : ""}</button><button type="button" data-u4-action="review" data-u4-topic="${escapeHtml(topic.id)}">Review Words</button>`
+        : `<button type="button" data-u4-action="learn" data-u4-topic="${escapeHtml(topic.id)}">Learn</button><button type="button" data-u4-action="practice" data-u4-topic="${escapeHtml(topic.id)}">Practice</button><button type="button" data-u4-action="review" data-u4-topic="${escapeHtml(topic.id)}">Review Words</button><button type="button" data-u4-action="mistakes" data-u4-topic="${escapeHtml(topic.id)}">Mistakes${mistakes ? ` (${mistakes})` : ""}</button>`;
       return `<article class="unit4-topic-card ${topic.primary ? "priority" : "culture"}" data-u4-topic-card="${escapeHtml(topic.id)}">
         <div class="unit4-topic-head"><div><p>${topic.primary ? "Priority topic" : "Low-priority recognition"}</p><h3>${escapeHtml(topic.title)}</h3></div><label class="unit4-mixed-toggle"><input type="checkbox" value="${escapeHtml(topic.title)}" ${selected}><span>Include in mixed</span></label></div>
         <p class="unit4-topic-summary">${escapeHtml(topic.summary)}</p>
         <div class="unit4-know"><strong>What to know</strong><span>${escapeHtml(topic.whatToKnow)}</span></div>
         <div class="unit4-topic-stats"><span><strong>${mastery === null ? "—" : `${mastery}%`}</strong> Mastery</span><span><strong>${mistakes}</strong> Mistakes</span><span><strong>${UNIT4.coreVocabulary.filter((word) => word.groups.includes(topic.vocabFilter)).length}</strong> Core words</span></div>
-        <div class="unit4-topic-actions"><button type="button" data-u4-action="learn" data-u4-topic="${escapeHtml(topic.id)}">Learn</button><button type="button" data-u4-action="practice" data-u4-topic="${escapeHtml(topic.id)}">Practice</button><button type="button" data-u4-action="review" data-u4-topic="${escapeHtml(topic.id)}">Review Words</button><button type="button" data-u4-action="mistakes" data-u4-topic="${escapeHtml(topic.id)}">Mistakes${mistakes ? ` (${mistakes})` : ""}</button></div>
+        <div class="unit4-topic-actions ${topic.id === "demonstratives" ? "demonstrative-actions" : ""}">${actions}</div>
         <div class="unit4-practice-options hidden" data-u4-options="${escapeHtml(topic.id)}"><strong>Choose what to practice</strong><div>${options}</div></div>
       </article>`;
     }).join("");
     const mixedSelected = settings.topics.includes("Mixed Unit 4") ? "checked" : "";
-    wrap.innerHTML = `<div class="unit4-topic-grid">${cards}</div><article class="unit4-mixed-card"><div><p>Balanced cram session</p><h3>Mixed Unit 4</h3><span>Draws only from the seven ★ priority topics. Culture and hidden later material stay out.</span></div><label class="unit4-mixed-toggle"><input type="checkbox" value="Mixed Unit 4" ${mixedSelected}><span>Include in builder</span></label><div><button type="button" data-u4-action="mixed">Practice Mixed Unit 4</button><button type="button" data-u4-action="review-all">All Unit 4 Core Words</button></div></article>`;
+    wrap.innerHTML = `<div class="unit4-topic-grid">${cards}</div><article class="unit4-mixed-card"><div><p>Balanced cram session</p><h3>Mixed Unit 4</h3><span>Draws only from the eight ★ priority topics you select. Culture and hidden later material stay out.</span></div><label class="unit4-mixed-toggle"><input type="checkbox" value="Mixed Unit 4" ${mixedSelected}><span>Include in builder</span></label><div><button type="button" data-u4-action="mixed">Practice Mixed Unit 4</button><button type="button" data-u4-action="review-all">All Unit 4 Core Words</button></div></article>`;
   }
 
   function syncSettings() {
@@ -305,7 +309,7 @@
     $("#brand-unit-label").textContent = `${unitLabel} study lab`;
     $("#home-unit-label").textContent = unitLabel;
     $("#hero-copy").textContent = activeUnit === "unit4"
-      ? "Cram Unit 4 as seven connected topics: learn the rule, review its core words, practice it, and revisit only its mistakes."
+      ? "Cram Unit 4 as eight connected topics: learn the rule, review its core words, practice it, and revisit only its mistakes."
       : activeUnit === "unit3"
       ? "Learn and practice family and house vocabulary, -ERE and -IRE verbs, -isc patterns, possessives, articulated prepositions, and family-tree reasoning."
       : activeUnit === "unit2" ? "Focused Exam 2 and Unit 2 practice for course vocabulary, adjectives, avere, regular and irregular verbs, listening, and classroom usage."
